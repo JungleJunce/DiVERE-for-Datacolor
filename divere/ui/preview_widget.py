@@ -117,7 +117,10 @@ class PreviewWidget(QWidget):
     request_restore_crop = Signal()  # 返回原图模式
     request_smart_add_crop = Signal()  # 智能添加裁剪
     request_focus_contactsheet = Signal()  # 单张/接触印相的裁剪聚焦
-    
+
+    # 中性色定义相关信号
+    neutral_point_selected = Signal(float, float)  # (norm_x, norm_y) 选中的中性点归一化坐标
+
     def __init__(self, context=None):
         super().__init__()
         
@@ -165,6 +168,10 @@ class PreviewWidget(QWidget):
         self.cc_drag_idx: int | None = None
         self.cc_handle_radius_disp: float = 8.0
         self.cc_ref_qcolors = None  # 24项，参考色（QColor）
+
+        # 中性色定义状态
+        self.neutral_point_selection_mode: bool = False  # 是否处于中性点选择模式
+        self.neutral_point_norm: Optional[Tuple[float, float]] = None  # 选定的中性点归一化坐标 [0,1]
 
         # 裁剪交互与显示
         self._crop_mode: bool = False  # 是否在框选新裁剪模式
@@ -1631,6 +1638,10 @@ class PreviewWidget(QWidget):
             self._draw_black_cutoff_overlay(painter)
         except Exception:
             pass
+        try:
+            self._draw_neutral_point_overlay(painter)
+        except Exception:
+            pass
 
     def _ensure_ants_timer(self, on: bool):
         if on:
@@ -1902,9 +1913,32 @@ class PreviewWidget(QWidget):
     def _mouse_press_event(self, event):
         """鼠标按下事件"""
         if event.button() == Qt.MouseButton.LeftButton:
+            # 优先级0：中性点选择模式（最高优先级）
+            if self.neutral_point_selection_mode:
+                # 将点击位置转换为归一化坐标
+                orig_point = self._display_to_original_point(event.position())
+                if orig_point is not None and self.current_image and self.current_image.metadata:
+                    source_wh = self.current_image.metadata.get('source_wh')
+                    if source_wh:
+                        src_w, src_h = source_wh
+                        norm_x = orig_point[0] / src_w
+                        norm_y = orig_point[1] / src_h
+
+                        # 保存选定的中性点
+                        self.neutral_point_norm = (norm_x, norm_y)
+
+                        # 退出选择模式
+                        self.exit_neutral_point_selection_mode()
+
+                        # 发射信号，通知已选择中性点
+                        self.neutral_point_selected.emit(norm_x, norm_y)
+
+                        event.accept()
+                        return
+
             # 记录点击时间，用于双击检测
             current_time = self._double_click_timer.remainingTime()
-            
+
             # 检查是否点击在裁剪框内（原图模式，多裁剪）
             if self._show_all_crops:
                 clicked_crop_id = self._get_crop_at_position(event.pos())
@@ -2475,6 +2509,69 @@ class PreviewWidget(QWidget):
             self._update_display()
         except Exception as e:
             print(f"右旋转色卡失败: {e}")
+
+    # ===== 中性色定义相关方法 =====
+
+    def enter_neutral_point_selection_mode(self):
+        """进入中性点选择模式"""
+        self.neutral_point_selection_mode = True
+        # 设置十字光标
+        self.image_label.setCursor(QCursor(Qt.CursorShape.CrossCursor))
+        self._update_display()
+
+    def exit_neutral_point_selection_mode(self):
+        """退出中性点选择模式"""
+        self.neutral_point_selection_mode = False
+        # 恢复默认光标
+        self.image_label.setCursor(QCursor(Qt.CursorShape.ArrowCursor))
+        self._update_display()
+
+    def clear_neutral_point(self):
+        """清除选定的中性点"""
+        self.neutral_point_norm = None
+        self._update_display()
+
+    def _draw_neutral_point_overlay(self, painter: QPainter):
+        """绘制中性点标记（靶心样式）"""
+        if not self.neutral_point_norm:
+            return
+
+        try:
+            # 将归一化坐标转换为显示坐标
+            display_coords = self._norm_to_display_coords([self.neutral_point_norm])
+            if not display_coords:
+                return
+
+            x, y = display_coords[0]
+
+            # 绘制靶心标记
+            painter.save()
+
+            # 外圈（半透明白色）
+            painter.setPen(QPen(QColor(255, 255, 255, 180), 2))
+            painter.setBrush(Qt.BrushStyle.NoBrush)
+            painter.drawEllipse(QPointF(x, y), 12, 12)
+
+            # 中圈（半透明红色）
+            painter.setPen(QPen(QColor(255, 0, 0, 200), 2))
+            painter.drawEllipse(QPointF(x, y), 8, 8)
+
+            # 内圈（实心红色）
+            painter.setBrush(QColor(255, 0, 0, 180))
+            painter.setPen(Qt.PenStyle.NoPen)
+            painter.drawEllipse(QPointF(x, y), 3, 3)
+
+            # 十字线
+            painter.setPen(QPen(QColor(255, 255, 255, 200), 1))
+            painter.drawLine(QPointF(x - 15, y), QPointF(x - 5, y))  # 左
+            painter.drawLine(QPointF(x + 5, y), QPointF(x + 15, y))  # 右
+            painter.drawLine(QPointF(x, y - 15), QPointF(x, y - 5))  # 上
+            painter.drawLine(QPointF(x, y + 5), QPointF(x, y + 15))  # 下
+
+            painter.restore()
+
+        except Exception as e:
+            print(f"绘制中性点标记失败: {e}")
 
     # ===== 旋转锚点支持代码已移除 =====
     # 简化旋转逻辑，旋转后自动适应窗口显示

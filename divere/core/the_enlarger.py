@@ -230,6 +230,14 @@ class TheEnlarger:
             return (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
 
     # =======================
+    # 中性点自动增益（已废弃，移至ApplicationContext的迭代模式）
+    # =======================
+    # 之前的 calculate_auto_gain_by_selected_neutral 方法已移除
+    # 新实现采用异步迭代模式，在 ApplicationContext 中通过
+    # _perform_neutral_point_iteration 实现，每次迭代都基于
+    # 实际渲染的 DisplayP3 preview 图像
+
+    # =======================
     # 矩阵管理 (DEPRECATED - MOVED TO FilmPipelineProcessor)
     # =======================
 

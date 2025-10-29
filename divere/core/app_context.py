@@ -120,7 +120,13 @@ class ApplicationContext(QObject):
         # AI自动校色迭代状态
         self._auto_color_iterations = 0
         self._get_preview_for_auto_color_callback = None
-        
+
+        # 中性点自动增益迭代状态
+        self._neutral_point_iterations = 0
+        self._neutral_point_norm = None  # (x, y) 归一化坐标
+        self._neutral_point_callback = None
+        self._neutral_point_sample_size = 5
+
         # 色卡优化状态管理
         self._ccm_optimization_active = False
         
@@ -1492,6 +1498,131 @@ class ApplicationContext(QObject):
             self._auto_color_iterations = 0
             self._get_preview_for_auto_color_callback = None
 
+    def _sample_preview_region(self, preview_image: ImageData, norm_x: float, norm_y: float, sample_size: int) -> Tuple[float, float, float]:
+        """
+        从preview图像采样指定区域的RGB均值
+
+        Args:
+            preview_image: Preview图像（DisplayP3空间）
+            norm_x: 归一化X坐标 (0-1)
+            norm_y: 归一化Y坐标 (0-1)
+            sample_size: 采样区域大小（n×n像素）
+
+        Returns:
+            (r_mean, g_mean, b_mean): RGB均值
+        """
+        img_array = preview_image.array
+        height, width = img_array.shape[:2]
+
+        # 转换为像素坐标
+        x_pixel = int(norm_x * width)
+        y_pixel = int(norm_y * height)
+
+        # 计算采样区域
+        half_size = sample_size // 2
+        x_start = max(0, x_pixel - half_size)
+        x_end = min(width, x_pixel + half_size + 1)
+        y_start = max(0, y_pixel - half_size)
+        y_end = min(height, y_pixel + half_size + 1)
+
+        # 提取区域并计算均值
+        region = img_array[y_start:y_end, x_start:x_end, :]
+        r_mean = float(np.mean(region[:, :, 0]))
+        g_mean = float(np.mean(region[:, :, 1]))
+        b_mean = float(np.mean(region[:, :, 2]))
+
+        return r_mean, g_mean, b_mean
+
+    def _perform_neutral_point_iteration(self):
+        """执行一次中性点迭代（从DisplayP3 preview采样并调整gains）"""
+        # 检查是否应该停止
+        if self._neutral_point_iterations <= 0 or not self._neutral_point_callback:
+            self._neutral_point_callback = None
+            self._neutral_point_norm = None
+            self.status_message_changed.emit("中性色定义完成")
+            self._autosave_timer.start()
+            return
+
+        # 获取当前preview图像（DisplayP3空间）
+        preview_image = self._neutral_point_callback()
+        if preview_image is None or preview_image.array is None:
+            self.status_message_changed.emit("中性色定义中止：无preview图像")
+            self._neutral_point_callback = None
+            self._neutral_point_norm = None
+            return
+
+        try:
+            # 从DisplayP3 preview采样5x5区域
+            norm_x, norm_y = self._neutral_point_norm
+            r_mean, g_mean, b_mean = self._sample_preview_region(
+                preview_image, norm_x, norm_y, self._neutral_point_sample_size
+            )
+
+            # 检查收敛（DisplayP3空间的RGB差异）
+            r_g_diff = abs(r_mean - g_mean)
+            g_b_diff = abs(g_mean - b_mean)
+            r_b_diff = abs(r_mean - b_mean)
+            max_diff = max(r_g_diff, g_b_diff, r_b_diff)
+
+            if max_diff < 0.0001:  # DisplayP3空间，阈值0.0001
+                self.status_message_changed.emit(f"中性色已收敛 (RGB差异={max_diff:.4f})")
+                self._neutral_point_iterations = 0
+                self._neutral_point_callback = None
+                self._neutral_point_norm = None
+                self._autosave_timer.start()
+                return
+
+            # 计算调整量（梯度下降）
+            learning_rate = 0.5
+            r_error = r_mean - g_mean
+            b_error = b_mean - g_mean
+
+            current_gains = np.array(self._current_params.rgb_gains)
+            new_r_gain = np.clip(current_gains[0] - learning_rate * r_error, -3.0, 3.0)
+            new_b_gain = np.clip(current_gains[2] - learning_rate * b_error, -3.0, 3.0)
+
+            # 更新参数并触发预览（会自动调用下一次迭代）
+            new_params = self._current_params.copy()
+            new_params.rgb_gains = (new_r_gain, current_gains[1], new_b_gain)
+
+            self._neutral_point_iterations -= 1
+            self.update_params(new_params)
+            self.status_message_changed.emit(
+                f"中性色迭代中... 剩余{self._neutral_point_iterations}次 (RGB差异={max_diff:.4f})"
+            )
+
+        except Exception as e:
+            self.status_message_changed.emit(f"中性色定义迭代失败: {e}")
+            self._neutral_point_iterations = 0
+            self._neutral_point_callback = None
+            self._neutral_point_norm = None
+
+    def calculate_neutral_point_auto_gain(self, norm_x: float, norm_y: float, get_preview_callback):
+        """
+        启动中性点自动增益迭代（通过preview更新循环）
+
+        Args:
+            norm_x: 选择点的归一化X坐标 (0-1)
+            norm_y: 选择点的归一化Y坐标 (0-1)
+            get_preview_callback: 获取预览图像的回调函数
+        """
+        # 黑白模式下跳过RGB gains调整
+        if self.is_monochrome_type():
+            pipeline_config = self.film_type_controller.get_pipeline_config(self._current_film_type)
+            if not pipeline_config.enable_rgb_gains:
+                self.status_message_changed.emit("黑白胶片模式下RGB增益调整功能已禁用")
+                return
+
+        # 初始化迭代状态
+        self._neutral_point_iterations = 8  # 最多8次
+        self._neutral_point_norm = (norm_x, norm_y)
+        self._neutral_point_callback = get_preview_callback
+        self._neutral_point_sample_size = 5
+
+        self.status_message_changed.emit("开始中性色定义迭代...")
+
+        # 开始第一次迭代
+        self._perform_neutral_point_iteration()
 
     def _prepare_proxy(self):
         """准备proxy图像，应用标准变换链：裁剪 → 旋转"""
@@ -1681,6 +1812,9 @@ class ApplicationContext(QObject):
         # If an iterative auto color is in progress, trigger the next step
         if self._auto_color_iterations > 0 and self._get_preview_for_auto_color_callback:
             QTimer.singleShot(0, self._perform_auto_color_iteration)
+        # If neutral point iteration is in progress, trigger the next step
+        if self._neutral_point_iterations > 0 and self._neutral_point_callback:
+            QTimer.singleShot(0, self._perform_neutral_point_iteration)
 
 
     def _on_preview_error(self, message: str):

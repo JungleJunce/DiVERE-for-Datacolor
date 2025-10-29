@@ -181,6 +181,7 @@ class MainWindow(QMainWindow):
         """连接ParameterPanel的信号"""
         self.parameter_panel.auto_color_requested.connect(self._on_auto_color_requested)
         self.parameter_panel.auto_color_iterative_requested.connect(self._on_auto_color_iterative_requested)
+        self.parameter_panel.neutral_point_selection_requested.connect(self.preview_widget.enter_neutral_point_selection_mode)
         self.parameter_panel.ccm_optimize_requested.connect(self._on_ccm_optimize_requested)
         self.parameter_panel.save_custom_colorspace_requested.connect(self._on_save_custom_colorspace_requested)
         self.parameter_panel.save_density_matrix_requested.connect(self._on_save_density_matrix_requested)
@@ -207,6 +208,8 @@ class MainWindow(QMainWindow):
         self.parameter_panel.lut_export_requested.connect(self._on_lut_export_requested)
         # 预览裁剪交互
         self.preview_widget.crop_committed.connect(self._on_crop_committed)
+        # 中性点选择
+        self.preview_widget.neutral_point_selected.connect(self._on_neutral_point_selected)
         # 单张裁剪（不创建正式crop项）
         try:
             self.preview_widget.single_crop_committed.connect(self._on_single_crop_committed)
@@ -672,6 +675,13 @@ class MainWindow(QMainWindow):
 
     def _on_auto_color_iterative_requested(self):
         self.context.run_iterative_auto_color(self.preview_widget.get_current_image_data)
+
+    def _on_neutral_point_selected(self, norm_x: float, norm_y: float):
+        """处理中性点选择"""
+        self.context.calculate_neutral_point_auto_gain(
+            norm_x, norm_y,
+            self.preview_widget.get_current_image_data
+        )
 
     # _apply_preset logic is now in ApplicationContext
     # def _apply_preset(self, preset: Preset): ...

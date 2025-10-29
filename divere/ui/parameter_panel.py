@@ -89,6 +89,7 @@ class ParameterPanel(QWidget):
     parameter_changed = Signal()
     auto_color_requested = Signal()
     auto_color_iterative_requested = Signal()
+    neutral_point_selection_requested = Signal()  # 请求进入中性点选择模式
     input_colorspace_changed = Signal(str)
     film_type_changed = Signal(str)
     colorchecker_changed = Signal(str)  # 色卡类型变化信号，参数为文件名
@@ -460,6 +461,8 @@ class ParameterPanel(QWidget):
         self.auto_color_multi_button = QPushButton("AI自动校色（多次）")
         rgb_layout.addWidget(self.auto_color_single_button, 3, 1)
         rgb_layout.addWidget(self.auto_color_multi_button, 3, 2)
+        self.define_neutral_button = QPushButton("定义中性色")
+        rgb_layout.addWidget(self.define_neutral_button, 4, 1, 1, 2)  # 跨两列
         layout.addWidget(rgb_group)
         layout.addStretch()
         return widget
@@ -614,6 +617,7 @@ class ParameterPanel(QWidget):
 
         self.auto_color_single_button.clicked.connect(self.auto_color_requested.emit)
         self.auto_color_multi_button.clicked.connect(self.auto_color_iterative_requested.emit)
+        self.define_neutral_button.clicked.connect(self.neutral_point_selection_requested.emit)
 
         # Spectral sharpening signals
         self.enable_scanner_spectral_checkbox.toggled.connect(self._on_scanner_spectral_toggled)
@@ -744,6 +748,7 @@ class ParameterPanel(QWidget):
         self.blue_gain_spinbox.setEnabled(rgb_gains_checked)
         self.auto_color_single_button.setEnabled(rgb_gains_checked)
         self.auto_color_multi_button.setEnabled(rgb_gains_checked)
+        self.define_neutral_button.setEnabled(rgb_gains_checked)
         
         # 密度曲线相关控件：只受"启用密度曲线"checkbox控制
         density_curve_checked = self.enable_density_curve_checkbox.isChecked()
@@ -985,10 +990,11 @@ class ParameterPanel(QWidget):
         self.green_gain_spinbox.setEnabled(enabled)
         self.blue_gain_slider.setEnabled(enabled)
         self.blue_gain_spinbox.setEnabled(enabled)
-        
+
         # 控制自动校色按钮
         self.auto_color_single_button.setEnabled(enabled)
         self.auto_color_multi_button.setEnabled(enabled)
+        self.define_neutral_button.setEnabled(enabled)
         
         # 控制启用复选框
         self.enable_rgb_gains_checkbox.setEnabled(enabled)
