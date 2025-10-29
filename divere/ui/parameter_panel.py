@@ -89,7 +89,8 @@ class ParameterPanel(QWidget):
     parameter_changed = Signal()
     auto_color_requested = Signal()
     auto_color_iterative_requested = Signal()
-    neutral_point_selection_requested = Signal()  # 请求进入中性点选择模式
+    neutral_point_selection_requested = Signal(int)  # 请求进入中性点选择模式，参数为色温(K)
+    neutral_white_point_changed = Signal(int)  # 中性点色温变化信号，参数为新色温(K)
     input_colorspace_changed = Signal(str)
     film_type_changed = Signal(str)
     colorchecker_changed = Signal(str)  # 色卡类型变化信号，参数为文件名
@@ -462,7 +463,15 @@ class ParameterPanel(QWidget):
         rgb_layout.addWidget(self.auto_color_single_button, 3, 1)
         rgb_layout.addWidget(self.auto_color_multi_button, 3, 2)
         self.define_neutral_button = QPushButton("定义中性色")
-        rgb_layout.addWidget(self.define_neutral_button, 4, 1, 1, 2)  # 跨两列
+        rgb_layout.addWidget(self.define_neutral_button, 4, 1)  #
+        self.neutral_white_point_spinbox = QSpinBox()
+        self.neutral_white_point_spinbox.setMinimum(2000)
+        self.neutral_white_point_spinbox.setMaximum(7000)
+        self.neutral_white_point_spinbox.setSingleStep(100)
+        self.neutral_white_point_spinbox.setValue(5500)
+        self.neutral_white_point_spinbox.setSuffix(" K")
+        self.neutral_white_point_spinbox.setToolTip("中性色的色温 (Kelvin)")
+        rgb_layout.addWidget(self.neutral_white_point_spinbox, 4, 2)
         layout.addWidget(rgb_group)
         layout.addStretch()
         return widget
@@ -617,7 +626,8 @@ class ParameterPanel(QWidget):
 
         self.auto_color_single_button.clicked.connect(self.auto_color_requested.emit)
         self.auto_color_multi_button.clicked.connect(self.auto_color_iterative_requested.emit)
-        self.define_neutral_button.clicked.connect(self.neutral_point_selection_requested.emit)
+        self.define_neutral_button.clicked.connect(lambda: self.neutral_point_selection_requested.emit(self.neutral_white_point_spinbox.value()))
+        self.neutral_white_point_spinbox.valueChanged.connect(self.neutral_white_point_changed.emit)
 
         # Spectral sharpening signals
         self.enable_scanner_spectral_checkbox.toggled.connect(self._on_scanner_spectral_toggled)

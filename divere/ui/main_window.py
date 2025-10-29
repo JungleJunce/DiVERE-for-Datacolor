@@ -47,6 +47,9 @@ class MainWindow(QMainWindow):
         self.current_image_index = -1  # 当前图片在列表中的索引
         self.current_image_path = None  # 当前图片的路径
 
+        # 中性点色温参数
+        self._neutral_point_white_point = 5500  # 默认色温5500K
+
         # 设置窗口
         self.setWindowTitle("DiVERE - 数字彩色放大机")
         self.setGeometry(100, 100, 1400, 900)
@@ -181,7 +184,8 @@ class MainWindow(QMainWindow):
         """连接ParameterPanel的信号"""
         self.parameter_panel.auto_color_requested.connect(self._on_auto_color_requested)
         self.parameter_panel.auto_color_iterative_requested.connect(self._on_auto_color_iterative_requested)
-        self.parameter_panel.neutral_point_selection_requested.connect(self.preview_widget.enter_neutral_point_selection_mode)
+        self.parameter_panel.neutral_point_selection_requested.connect(self._on_neutral_point_selection_requested)
+        self.parameter_panel.neutral_white_point_changed.connect(self._on_neutral_white_point_changed)
         self.parameter_panel.ccm_optimize_requested.connect(self._on_ccm_optimize_requested)
         self.parameter_panel.save_custom_colorspace_requested.connect(self._on_save_custom_colorspace_requested)
         self.parameter_panel.save_density_matrix_requested.connect(self._on_save_density_matrix_requested)
@@ -524,6 +528,9 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
+        # 切换图片时清除中性点标记
+        self.preview_widget.clear_neutral_point()
+
     def _on_autosave_requested(self):
         """处理来自Context的自动保存请求"""
         current_image = self.context.get_current_image()
@@ -676,12 +683,32 @@ class MainWindow(QMainWindow):
     def _on_auto_color_iterative_requested(self):
         self.context.run_iterative_auto_color(self.preview_widget.get_current_image_data)
 
+    def _on_neutral_point_selection_requested(self, white_point: int):
+        """处理中性点选择请求，保存色温并进入选择模式"""
+        self._neutral_point_white_point = white_point
+        self.preview_widget.enter_neutral_point_selection_mode()
+
     def _on_neutral_point_selected(self, norm_x: float, norm_y: float):
         """处理中性点选择"""
         self.context.calculate_neutral_point_auto_gain(
             norm_x, norm_y,
-            self.preview_widget.get_current_image_data
+            self.preview_widget.get_current_image_data,
+            self._neutral_point_white_point
         )
+
+    def _on_neutral_white_point_changed(self, white_point: int):
+        """色温spinbox变化时，如果有中性点则自动重新定义"""
+        # 更新保存的色温值
+        self._neutral_point_white_point = white_point
+
+        # 如果preview上有中性点标记，自动重新定义
+        if self.preview_widget.neutral_point_norm is not None:
+            norm_x, norm_y = self.preview_widget.neutral_point_norm
+            self.context.calculate_neutral_point_auto_gain(
+                norm_x, norm_y,
+                self.preview_widget.get_current_image_data,
+                white_point
+            )
 
     # _apply_preset logic is now in ApplicationContext
     # def _apply_preset(self, preset: Preset): ...

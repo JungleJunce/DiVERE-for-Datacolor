@@ -512,6 +512,7 @@ class PreviewWidget(QWidget):
         self._crop_dragging = False
         self._crop_start_norm = None
         self._crop_current_norm = None
+        self.clear_neutral_point()  # 切换crop/single时清除中性点标记
         self.request_switch_profile.emit(kind, crop_id)
 
     def _emit_request_new_crop(self, direction: CropAddDirection):

@@ -2,6 +2,7 @@ from PySide6.QtCore import QObject, Signal, QRunnable, Slot, QThreadPool, QTimer
 from typing import Optional, List, Tuple
 import numpy as np
 from pathlib import Path
+from colour.temperature import CCT_to_xy_CIE_D
 
 from .data_types import ImageData, ColorGradingParams, Preset, CropInstance, PresetBundle, CropPresetEntry, InputTransformationDefinition, MatrixDefinition, CurveDefinition, PipelineConfig, UIStateConfig, ContactsheetProfile, CropAddDirection, PreviewConfig
 from .image_manager import ImageManager
@@ -11,6 +12,7 @@ from .film_type_controller import FilmTypeController
 from .folder_navigator import FolderNavigator
 from ..utils.auto_preset_manager import AutoPresetManager
 from ..utils.enhanced_config_manager import enhanced_config_manager
+from . import color_science
 
 
 class _PreviewWorkerSignals(QObject):
@@ -1535,6 +1537,7 @@ class ApplicationContext(QObject):
 
     def _perform_neutral_point_iteration(self):
         """执行一次中性点迭代（从DisplayP3 preview采样并调整gains）"""
+
         # 检查是否应该停止
         if self._neutral_point_iterations <= 0 or not self._neutral_point_callback:
             self._neutral_point_callback = None
@@ -1552,30 +1555,64 @@ class ApplicationContext(QObject):
             return
 
         try:
+            # 使用保存的色温值
+            white_point = self._neutral_point_white_point
+
+            # 将Kelvin色温转换为Display P3空间的RGB比值
+            # Step 1: Kelvin → xy色度坐标 (CIE 1931)
+            xy = CCT_to_xy_CIE_D(white_point+1000) # 以5500K为白点
+
+            # Step 2: xy → XYZ (Y=1)
+            xyz = color_science.xy_to_XYZ_unitY(xy)
+
+            # Step 3: XYZ → Display P3 Linear RGB
+            # 注意：Display P3的白点是D65 (6500K)
+            # 我们不做色适应，因为我们要的就是white_point在Display P3中的实际RGB表示
+            target_rgb = color_science.xyz_to_display_p3_linear_rgb(xyz)
+            # Step 3.5: 应用 Display P3 的 gamma 编码（2.2）                                                                                                                                                             │ │
+            # 因为preview图像已经过gamma编码，我们需要将线性target_rgb也编码                                                                                                                                             │ │
+            display_p3_gamma = 2.2
+            target_rgb = np.power(np.clip(target_rgb, 0, 1), 1.0 / display_p3_gamma)
+
+            # Step 4: 归一化为比值（以G通道为基准）
+            # 避免除以零
+            if target_rgb[1] < 1e-10:
+                target_rgb[1] = 1e-10
+            target_r_ratio = target_rgb[0] / target_rgb[1]
+            target_g_ratio = 1.0
+            target_b_ratio = target_rgb[2] / target_rgb[1]
+
             # 从DisplayP3 preview采样5x5区域
             norm_x, norm_y = self._neutral_point_norm
             r_mean, g_mean, b_mean = self._sample_preview_region(
                 preview_image, norm_x, norm_y, self._neutral_point_sample_size
             )
 
-            # 检查收敛（DisplayP3空间的RGB差异）
-            r_g_diff = abs(r_mean - g_mean)
-            g_b_diff = abs(g_mean - b_mean)
-            r_b_diff = abs(r_mean - b_mean)
-            max_diff = max(r_g_diff, g_b_diff, r_b_diff)
+            # 计算当前采样点的RGB比值（以G通道为基准）
+            # 避免除以零
+            if g_mean < 1e-10:
+                g_mean = 1e-10
+            current_r_ratio = r_mean / g_mean
+            current_g_ratio = 1.0
+            current_b_ratio = b_mean / g_mean
 
-            if max_diff < 0.0001:  # DisplayP3空间，阈值0.0001
-                self.status_message_changed.emit(f"中性色已收敛 (RGB差异={max_diff:.4f})")
+            # 检查收敛（比较RGB比值差异）
+            r_ratio_diff = abs(current_r_ratio - target_r_ratio)
+            b_ratio_diff = abs(current_b_ratio - target_b_ratio)
+            max_ratio_diff = max(r_ratio_diff, b_ratio_diff)
+
+            if max_ratio_diff < 0.001:  # 比值差异阈值0.001
+                self.status_message_changed.emit(f"中性色已收敛 (比值差异={max_ratio_diff:.4f})")
                 self._neutral_point_iterations = 0
                 self._neutral_point_callback = None
                 self._neutral_point_norm = None
                 self._autosave_timer.start()
                 return
 
-            # 计算调整量（梯度下降）
-            learning_rate = 0.5
-            r_error = r_mean - g_mean
-            b_error = b_mean - g_mean
+            # 计算调整量（梯度下降，基于比值误差）
+            learning_rate = 0.5*g_mean
+            r_error = current_r_ratio - target_r_ratio
+            b_error = current_b_ratio - target_b_ratio
 
             current_gains = np.array(self._current_params.rgb_gains)
             new_r_gain = np.clip(current_gains[0] - learning_rate * r_error, -3.0, 3.0)
@@ -1588,7 +1625,7 @@ class ApplicationContext(QObject):
             self._neutral_point_iterations -= 1
             self.update_params(new_params)
             self.status_message_changed.emit(
-                f"中性色迭代中... 剩余{self._neutral_point_iterations}次 (RGB差异={max_diff:.4f})"
+                f"中性色迭代中... 剩余{self._neutral_point_iterations}次 (目标={white_point}K, 比值差异={max_ratio_diff:.4f})"
             )
 
         except Exception as e:
@@ -1597,7 +1634,7 @@ class ApplicationContext(QObject):
             self._neutral_point_callback = None
             self._neutral_point_norm = None
 
-    def calculate_neutral_point_auto_gain(self, norm_x: float, norm_y: float, get_preview_callback):
+    def calculate_neutral_point_auto_gain(self, norm_x: float, norm_y: float, get_preview_callback, white_point: int = 5500):
         """
         启动中性点自动增益迭代（通过preview更新循环）
 
@@ -1605,6 +1642,7 @@ class ApplicationContext(QObject):
             norm_x: 选择点的归一化X坐标 (0-1)
             norm_y: 选择点的归一化Y坐标 (0-1)
             get_preview_callback: 获取预览图像的回调函数
+            white_point: 中性色的色温 (Kelvin), 默认5500K
         """
         # 黑白模式下跳过RGB gains调整
         if self.is_monochrome_type():
@@ -1618,8 +1656,9 @@ class ApplicationContext(QObject):
         self._neutral_point_norm = (norm_x, norm_y)
         self._neutral_point_callback = get_preview_callback
         self._neutral_point_sample_size = 5
+        self._neutral_point_white_point = white_point  # 保存色温参数
 
-        self.status_message_changed.emit("开始中性色定义迭代...")
+        self.status_message_changed.emit(f"开始中性色定义迭代 (色温={white_point}K)...")
 
         # 开始第一次迭代
         self._perform_neutral_point_iteration()
