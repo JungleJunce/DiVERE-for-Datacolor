@@ -32,9 +32,13 @@ except Exception:
 # 配置数值计算库，防止多线程冲突和栈溢出
 # 必须在导入numpy之前设置
 os.environ['OPENBLAS_NUM_THREADS'] = '1'
-os.environ['MKL_NUM_THREADS'] = '1'  
+os.environ['MKL_NUM_THREADS'] = '1'
 os.environ['NUMEXPR_NUM_THREADS'] = '1'
 os.environ['OMP_NUM_THREADS'] = '1'
+
+# 取消OpenCV图像像素限制，允许加载超大图像
+# 设置为0表示无限制（OpenCV默认限制约1.79亿像素）
+os.environ['OPENCV_IO_MAX_IMAGE_PIXELS'] = '0'
 
 # 添加项目根目录到Python路径（开发环境下使用）
 project_root = Path(__file__).parent.parent
