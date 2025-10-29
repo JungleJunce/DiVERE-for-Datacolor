@@ -347,10 +347,13 @@ class ImageManager:
         """缓存代理图像"""
         # 简单的LRU缓存实现
         if len(self._proxy_cache) >= self._max_cache_size:
-            # 移除最旧的缓存项
+            # 移除最旧的缓存项，显式释放以防止内存泄漏
             oldest_key = next(iter(self._proxy_cache))
+            old_proxy = self._proxy_cache[oldest_key]
+            if old_proxy is not None:
+                del old_proxy
             del self._proxy_cache[oldest_key]
-        
+
         self._proxy_cache[image_id] = proxy
     
     def clear_cache(self):

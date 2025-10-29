@@ -43,6 +43,12 @@ class PreviewCanvas(QLabel):
         self.overlay_drawer = None
 
     def set_source_pixmap(self, pixmap: QPixmap) -> None:
+        # 显式释放旧的pixmap对象以防止内存泄漏
+        if self._source_pixmap is not None:
+            del self._source_pixmap
+        if self._scaled_pixmap is not None:
+            del self._scaled_pixmap
+
         self._source_pixmap = pixmap
         # 清空文本避免覆盖
         self.setText("")
@@ -1255,7 +1261,11 @@ class PreviewWidget(QWidget):
         # 保存当前cut-off显示状态
         was_showing_cutoff = self._show_black_cutoff
         current_compensation = self._cutoff_compensation
-        
+
+        # 显式释放旧的ImageData对象以防止内存泄漏
+        if self.current_image is not None:
+            del self.current_image
+
         self.current_image = image_data
         # 若图像元数据中已有裁剪（来自Preset或Context），并且本地未显式覆盖，则创建/同步虚线框
         try:

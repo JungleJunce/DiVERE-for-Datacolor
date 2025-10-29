@@ -39,7 +39,7 @@ class _PreviewWorker(QRunnable):
             monochrome_converter = None
             if self.convert_to_monochrome_in_idt:
                 monochrome_converter = self.color_space_manager.convert_to_monochrome
-            
+
             result_image = self.the_enlarger.apply_full_pipeline(
                 self.image, self.params,
                 convert_to_monochrome_in_idt=self.convert_to_monochrome_in_idt,
@@ -52,6 +52,11 @@ class _PreviewWorker(QRunnable):
             tb = traceback.format_exc()
             self.signals.error.emit(f"{e}\n{tb}")
         finally:
+            # 显式释放worker持有的对象以防止内存泄漏
+            if hasattr(self, 'image') and self.image is not None:
+                del self.image
+            if hasattr(self, 'params') and self.params is not None:
+                del self.params
             self.signals.finished.emit()
 
 
@@ -724,6 +729,9 @@ class ApplicationContext(QObject):
         try:
             self._loading_image = True  # 设置加载标志，延迟预览更新
             self.status_message_changed.emit(f"正在加载图像: {file_path}...")
+            # 显式释放旧图像以防止内存泄漏
+            if self._current_image is not None:
+                del self._current_image
             self._current_image = self.image_manager.load_image(file_path)
             
             # 更新文件夹导航状态
@@ -1720,6 +1728,9 @@ class ApplicationContext(QObject):
         proxy = self.color_space_manager.set_image_color_space(
             proxy, self._current_params.input_color_space_name
         )
+        # 显式释放旧的proxy对象以防止内存泄漏
+        if self._current_proxy is not None:
+            del self._current_proxy
         self._current_proxy = self.color_space_manager.convert_to_working_space(
             proxy, skip_gamma_inverse=True
         )
@@ -1737,14 +1748,18 @@ class ApplicationContext(QObject):
                 effective_orientation = crop_instance.orientation
         
         # 应用旋转到代理图像
-        if (self._current_proxy and self._current_proxy.array is not None and 
+        if (self._current_proxy and self._current_proxy.array is not None and
             effective_orientation % 360 != 0):
             try:
                 import numpy as np
                 k = (effective_orientation // 90) % 4
                 if k != 0:
                     rotated = np.rot90(self._current_proxy.array, k=int(k))
-                    self._current_proxy = self._current_proxy.copy_with_new_array(rotated)
+                    # 保存旧对象引用以便释放
+                    old_proxy = self._current_proxy
+                    self._current_proxy = old_proxy.copy_with_new_array(rotated)
+                    # 显式释放旧对象以防止内存泄漏
+                    del old_proxy
             except Exception:
                 pass
         
@@ -2109,7 +2124,13 @@ class ApplicationContext(QObject):
         try:
             if not backup:
                 return
-                
+
+            # 显式释放旧对象以防止内存泄漏
+            if self._current_image is not None:
+                del self._current_image
+            if self._current_proxy is not None:
+                del self._current_proxy
+
             # 恢复核心状态
             self._current_image = backup.get('current_image')
             self._current_proxy = backup.get('current_proxy')
