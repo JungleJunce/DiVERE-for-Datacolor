@@ -191,7 +191,8 @@ class MainWindow(QMainWindow):
         """连接ParameterPanel的信号"""
         self.parameter_panel.auto_color_requested.connect(self._on_auto_color_requested)
         self.parameter_panel.auto_color_iterative_requested.connect(self._on_auto_color_iterative_requested)
-        self.parameter_panel.neutral_point_selection_requested.connect(self._on_neutral_point_selection_requested)
+        self.parameter_panel.pick_neutral_point_requested.connect(self._on_pick_neutral_point_requested)
+        self.parameter_panel.apply_neutral_color_requested.connect(self._on_apply_neutral_color_requested)
         self.parameter_panel.neutral_white_point_changed.connect(self._on_neutral_white_point_changed)
         self.parameter_panel.ccm_optimize_requested.connect(self._on_ccm_optimize_requested)
         self.parameter_panel.save_custom_colorspace_requested.connect(self._on_save_custom_colorspace_requested)
@@ -536,8 +537,9 @@ class MainWindow(QMainWindow):
         except Exception:
             pass
 
-        # 切换图片时清除中性点标记
+        # 切换图片时清除中性点标记并禁用应用按钮
         self.preview_widget.clear_neutral_point()
+        self.parameter_panel.enable_apply_neutral_button(False)
 
     def _on_autosave_requested(self):
         """处理来自Context的自动保存请求"""
@@ -691,17 +693,31 @@ class MainWindow(QMainWindow):
     def _on_auto_color_iterative_requested(self):
         self.context.run_iterative_auto_color(self.preview_widget.get_current_image_data)
 
-    def _on_neutral_point_selection_requested(self, white_point: int):
-        """处理中性点选择请求，保存色温并进入选择模式"""
-        self._neutral_point_white_point = white_point
+    def _on_pick_neutral_point_requested(self):
+        """进入中性点选择模式（不立即迭代）"""
         self.preview_widget.enter_neutral_point_selection_mode()
 
     def _on_neutral_point_selected(self, norm_x: float, norm_y: float):
-        """处理中性点选择"""
+        """用户选择了中性点，启用应用按钮"""
+        # 启用应用按钮
+        self.parameter_panel.enable_apply_neutral_button(True)
+        # 显示提示信息
+        self.statusBar().showMessage("中性点已选择，点击'应用中性色'开始调色", 3000)
+
+    def _on_apply_neutral_color_requested(self, white_point: int):
+        """应用中性色迭代调整"""
+        # 检查是否已选择点
+        if self.preview_widget.neutral_point_norm is None:
+            self.statusBar().showMessage("请先点击'取点'按钮选择中性点", 3000)
+            return
+
+        # 保存色温并开始迭代
+        self._neutral_point_white_point = white_point
+        norm_x, norm_y = self.preview_widget.neutral_point_norm
         self.context.calculate_neutral_point_auto_gain(
             norm_x, norm_y,
             self.preview_widget.get_current_image_data,
-            self._neutral_point_white_point
+            white_point
         )
 
     def _on_neutral_white_point_changed(self, white_point: int):

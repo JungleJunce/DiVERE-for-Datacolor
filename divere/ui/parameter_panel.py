@@ -15,7 +15,8 @@ from PySide6.QtWidgets import (
     QScrollArea, QMessageBox, QInputDialog, QFileDialog,
     QApplication
 )
-from PySide6.QtCore import Qt, Signal
+from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtGui import QIcon
 
 from divere.core.data_types import ColorGradingParams, Preset
 from divere.core.app_context import ApplicationContext
@@ -89,7 +90,8 @@ class ParameterPanel(QWidget):
     parameter_changed = Signal()
     auto_color_requested = Signal()
     auto_color_iterative_requested = Signal()
-    neutral_point_selection_requested = Signal(int)  # 请求进入中性点选择模式，参数为色温(K)
+    pick_neutral_point_requested = Signal()  # 请求进入中性点选择模式（取点）
+    apply_neutral_color_requested = Signal(int)  # 请求应用中性色迭代，参数为色温(K)
     neutral_white_point_changed = Signal(int)  # 中性点色温变化信号，参数为新色温(K)
     input_colorspace_changed = Signal(str)
     film_type_changed = Signal(str)
@@ -509,8 +511,27 @@ class ParameterPanel(QWidget):
         self.auto_color_multi_button = QPushButton("AI自动校色（多次）")
         rgb_layout.addWidget(self.auto_color_single_button, 3, 1)
         rgb_layout.addWidget(self.auto_color_multi_button, 3, 2)
-        self.define_neutral_button = QPushButton("定义中性色")
-        rgb_layout.addWidget(self.define_neutral_button, 4, 1)  #
+
+        # 中性色定义按钮组（取点图标按钮 + 应用文本按钮）
+        neutral_button_layout = QHBoxLayout()
+        neutral_button_layout.setSpacing(4)  # 按钮间距
+
+        # 取点图标按钮
+        self.pick_neutral_point_button = QPushButton()
+        icon_path = Path(__file__).parent / "asset" / "dropper-icon.png"
+        self.pick_neutral_point_button.setIcon(QIcon(str(icon_path)))
+        self.pick_neutral_point_button.setIconSize(QSize(20, 20))  # 图标大小
+        self.pick_neutral_point_button.setFixedSize(28, 28)  # 按钮固定大小（正方形）
+        self.pick_neutral_point_button.setToolTip("取点：在预览图上选择中性色点")
+
+        # 应用中性色按钮
+        self.apply_neutral_color_button = QPushButton("应用中性色")
+        self.apply_neutral_color_button.setEnabled(False)  # 初始状态禁用
+
+        neutral_button_layout.addWidget(self.pick_neutral_point_button, 0)  # 图标按钮不拉伸
+        neutral_button_layout.addWidget(self.apply_neutral_color_button, 1)  # 文本按钮拉伸填充
+        rgb_layout.addLayout(neutral_button_layout, 4, 1, 1, 1)  # 占据第1列
+
         self.neutral_white_point_spinbox = QSpinBox()
         self.neutral_white_point_spinbox.setMinimum(2000)
         self.neutral_white_point_spinbox.setMaximum(7000)
@@ -679,7 +700,8 @@ class ParameterPanel(QWidget):
 
         self.auto_color_single_button.clicked.connect(self.auto_color_requested.emit)
         self.auto_color_multi_button.clicked.connect(self.auto_color_iterative_requested.emit)
-        self.define_neutral_button.clicked.connect(lambda: self.neutral_point_selection_requested.emit(self.neutral_white_point_spinbox.value()))
+        self.pick_neutral_point_button.clicked.connect(self.pick_neutral_point_requested.emit)
+        self.apply_neutral_color_button.clicked.connect(lambda: self.apply_neutral_color_requested.emit(self.neutral_white_point_spinbox.value()))
         self.neutral_white_point_spinbox.valueChanged.connect(self.neutral_white_point_changed.emit)
 
         # Spectral sharpening signals
@@ -697,6 +719,10 @@ class ParameterPanel(QWidget):
         self.save_matrix_button_afterOpt.clicked.connect(self._on_save_matrix_clicked)
         self.save_colorchecker_colors_button.clicked.connect(self.save_colorchecker_colors_requested.emit)
         self.colorchecker_combo.currentTextChanged.connect(self._on_colorchecker_changed)
+
+    def enable_apply_neutral_button(self, enabled: bool):
+        """启用或禁用'应用中性色'按钮"""
+        self.apply_neutral_color_button.setEnabled(enabled)
 
     def update_ui_from_params(self):
         self._is_updating_ui = True
@@ -817,7 +843,8 @@ class ParameterPanel(QWidget):
         self.blue_gain_spinbox.setEnabled(rgb_gains_checked)
         self.auto_color_single_button.setEnabled(rgb_gains_checked)
         self.auto_color_multi_button.setEnabled(rgb_gains_checked)
-        self.define_neutral_button.setEnabled(rgb_gains_checked)
+        self.pick_neutral_point_button.setEnabled(rgb_gains_checked)
+        # apply_neutral_color_button的状态由是否选择了点来控制，不受checkbox影响
         
         # 密度曲线相关控件：只受"启用密度曲线"checkbox控制
         density_curve_checked = self.enable_density_curve_checkbox.isChecked()
@@ -1074,8 +1101,9 @@ class ParameterPanel(QWidget):
         # 控制自动校色按钮
         self.auto_color_single_button.setEnabled(enabled)
         self.auto_color_multi_button.setEnabled(enabled)
-        self.define_neutral_button.setEnabled(enabled)
-        
+        self.pick_neutral_point_button.setEnabled(enabled)
+        # apply_neutral_color_button的状态由是否选择了点来控制
+
         # 控制启用复选框
         self.enable_rgb_gains_checkbox.setEnabled(enabled)
         self.enable_rgb_gains_checkbox.setVisible(visible)
