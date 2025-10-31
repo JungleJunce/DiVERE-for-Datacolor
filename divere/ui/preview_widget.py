@@ -2583,6 +2583,7 @@ class PreviewWidget(QWidget):
         self.neutral_point_selection_mode = True
         # 设置十字光标
         self.image_label.setCursor(QCursor(Qt.CursorShape.CrossCursor))
+
         self._update_display()
 
     def exit_neutral_point_selection_mode(self):
@@ -2968,6 +2969,10 @@ class PreviewWidget(QWidget):
 
     def _handle_crop_hover_detection(self, mouse_pos: QPoint):
         """独立的裁剪框悬停检测，不受其他交互状态影响"""
+        # 中性点选择模式优先级最高，不改变光标
+        if self.neutral_point_selection_mode:
+            return
+
         # 原图模式下的多裁剪悬停
         if self._show_all_crops:
             old_hovering = self._hovering_crop_id

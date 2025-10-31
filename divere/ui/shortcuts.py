@@ -86,6 +86,11 @@ class ShortcutsBinder(QObject):
         add("Ctrl+A", self._act_channel_gamma_b_down)        # Ctrl+A: B Gamma降低 (亮部变黄)
         add("Ctrl+Shift+A", self._act_channel_gamma_b_down_fine) # 精细调整
 
+        # ========== 取色点、中性色功能 ==========
+        # 取色点
+        add(Qt.Key_I, self._act_pickNeutralPoint)
+        add(Qt.Key_N, self._act_applyNeutralColor)
+
     # ---------- 内部：工具 ----------
     def _add(self, seq, slot, context=Qt.ApplicationShortcut):
         sc = QShortcut(QKeySequence(seq), self.host)
@@ -297,6 +302,12 @@ class ShortcutsBinder(QObject):
     def _act_auto_color_multi(self):
         self.host._on_auto_color_iterative_requested()
         self.host._show_status_message("校色一次")
+
+    def _act_pickNeutralPoint(self):
+        self.host.preview_widget.enter_neutral_point_selection_mode()
+
+    def _act_applyNeutralColor(self):
+        self.host.parameter_panel.apply_neutral_color_requested.emit(self.host.parameter_panel.neutral_white_point_spinbox.value())
 
     def _act_add_crop(self):
         """添加新裁剪（相当于点击+按钮）"""
