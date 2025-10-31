@@ -392,86 +392,124 @@ class FilmMathOps:
     
     def apply_density_matrix(self, density_array: np.ndarray, matrix: np.ndarray,
                                dmax: float, pivot: float = 4.8-0.7,
+                               channel_gamma_r: float = 1.0,
+                               channel_gamma_b: float = 1.0,
                                use_parallel: bool = True) -> np.ndarray:
         """
-        应用密度校正矩阵
-        
+        应用密度校正矩阵和分层反差
+
         Args:
             density_array: 密度空间图像 [H, W, 3]
             matrix: 3x3校正矩阵
             dmax: dmax值，用于矩阵应用的参考点
             pivot: 转轴值
+            channel_gamma_r: R通道分层反差系数 (新增)
+            channel_gamma_b: B通道分层反差系数 (新增)
             use_parallel: 是否使用并行处理
-            
+
         Returns:
             校正后的密度数组
         """
         if matrix is None:
             return density_array
-            
+
         # 准备输入：添加dmax偏移
         input_density = density_array + dmax
-        
+
         if use_parallel and input_density.size > self.block_size * self.block_size:
-            return self._apply_matrix_parallel(input_density, matrix, pivot, dmax)
+            return self._apply_matrix_parallel(input_density, matrix, pivot, dmax,
+                                               channel_gamma_r, channel_gamma_b)
         else:
-            return self._apply_matrix_sequential(input_density, matrix, pivot, dmax)
+            return self._apply_matrix_sequential(input_density, matrix, pivot, dmax,
+                                                 channel_gamma_r, channel_gamma_b)
     
     def _apply_matrix_sequential(self, input_density: np.ndarray, matrix: np.ndarray,
-                                pivot: float, dmax: float) -> np.ndarray:
-        """顺序版本的矩阵应用"""
+                                pivot: float, dmax: float,
+                                channel_gamma_r: float = 1.0,
+                                channel_gamma_b: float = 1.0) -> np.ndarray:
+        """顺序版本的矩阵应用 + 分层反差"""
         original_shape = input_density.shape
-        
+
         # 多通道图像，正常处理
         reshaped = input_density.reshape(-1, input_density.shape[-1])
         if input_density.shape[-1] == 3:
             # RGB图像，直接应用变换
+            # 1. 应用密度校正矩阵
             adjusted = pivot + np.dot(reshaped - pivot, matrix.T)
+
+            # 2. 应用分层反差（新增）
+            if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                adjusted = pivot + (adjusted - pivot) * diag
+
             result = adjusted.reshape(original_shape) - dmax
         else:
             # 其他通道数，仅处理前3个通道
             rgb_part = reshaped[:, :3]
+            # 1. 应用密度校正矩阵
             adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
+
+            # 2. 应用分层反差（新增）
+            if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
             adjusted = reshaped.copy()
             adjusted[:, :3] = adjusted_rgb
             result = adjusted.reshape(original_shape) - dmax
-        
+
         return result
     
     def _apply_matrix_parallel(self, input_density: np.ndarray, matrix: np.ndarray,
-                              pivot: float, dmax: float) -> np.ndarray:
-        """并行版本的矩阵应用"""
+                              pivot: float, dmax: float,
+                              channel_gamma_r: float = 1.0,
+                              channel_gamma_b: float = 1.0) -> np.ndarray:
+        """并行版本的矩阵应用 + 分层反差"""
         original_shape = input_density.shape
         h, w, c = original_shape
-        
+
         # 计算分块
         blocks_h = (h + self.block_size - 1) // self.block_size
         blocks_w = (w + self.block_size - 1) // self.block_size
-        
+
         result = np.zeros_like(input_density)
-        
+
         def process_block(args):
             i, j = args
             start_h = i * self.block_size
             end_h = min((i + 1) * self.block_size, h)
             start_w = j * self.block_size
             end_w = min((j + 1) * self.block_size, w)
-            
+
             block = input_density[start_h:end_h, start_w:end_w, :]
             if c == 3:
                 # RGB图像，直接处理
                 block_reshaped = block.reshape(-1, 3)
+                # 1. 应用密度校正矩阵
                 adjusted_block = pivot + np.dot(block_reshaped - pivot, matrix.T)
+
+                # 2. 应用分层反差（新增）
+                if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                    diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                    adjusted_block = pivot + (adjusted_block - pivot) * diag
+
                 result_block = adjusted_block.reshape(block.shape)
             else:
                 # 其他通道数，仅处理前3个通道
                 block_reshaped = block.reshape(-1, c)
                 rgb_part = block_reshaped[:, :3]
+                # 1. 应用密度校正矩阵
                 adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
+
+                # 2. 应用分层反差（新增）
+                if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                    diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                    adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
                 adjusted_block = block_reshaped.copy()
                 adjusted_block[:, :3] = adjusted_rgb
                 result_block = adjusted_block.reshape(block.shape)
-            
+
             return (start_h, end_h, start_w, end_w, result_block)
         
         # 并行处理所有块
@@ -1315,7 +1353,9 @@ class FilmMathOps:
             matrix = self._get_density_matrix(params)
             if matrix is not None and not np.allclose(matrix, np.eye(3)):
                 density_array = self.apply_density_matrix(
-                    density_array, matrix, params.density_dmax
+                    density_array, matrix, params.density_dmax,
+                    channel_gamma_r=params.channel_gamma_r,
+                    channel_gamma_b=params.channel_gamma_b
                 )
             if profile is not None:
                 profile['density_matrix_ms'] = (time.time() - t2) * 1000.0

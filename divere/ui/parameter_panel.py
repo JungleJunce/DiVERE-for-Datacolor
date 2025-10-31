@@ -311,7 +311,7 @@ class ParameterPanel(QWidget):
         for display_name, value in film_types:
             self.film_type_combo.addItem(display_name, value)
         
-        film_type_layout.addWidget(QLabel("胶片类型:"), 0, 0)
+        film_type_layout.addWidget(QLabel("胶片类型（TODO）:"), 0, 0)
         film_type_layout.addWidget(self.film_type_combo, 0, 1, 1, 2)
         
         return film_type_group
@@ -438,6 +438,53 @@ class ParameterPanel(QWidget):
         matrix_layout.addLayout(combo_layout)
         matrix_layout.addLayout(matrix_grid)
         layout.addWidget(matrix_group)
+
+        # === 分层反差组（新增） ===
+        channel_gamma_group = QGroupBox("分层反差 (Channel Gamma)")
+        channel_gamma_layout = QVBoxLayout(channel_gamma_group)
+
+        # R通道
+        r_layout = QHBoxLayout()
+        r_layout.addWidget(QLabel("R Gamma:"))
+        self.channel_gamma_r_slider = QSlider(Qt.Horizontal)
+        self.channel_gamma_r_slider.setRange(500, 2000)  # 0.5-2.0, *1000
+        self.channel_gamma_r_slider.setValue(1000)       # 默认1.0
+        r_layout.addWidget(self.channel_gamma_r_slider)
+
+        self.channel_gamma_r_spinbox = QDoubleSpinBox()
+        self.channel_gamma_r_spinbox.setRange(0.5, 2.0)
+        self.channel_gamma_r_spinbox.setSingleStep(0.001)
+        self.channel_gamma_r_spinbox.setDecimals(3)
+        self.channel_gamma_r_spinbox.setValue(1.0)
+        self.channel_gamma_r_spinbox.setFixedWidth(80)
+        r_layout.addWidget(self.channel_gamma_r_spinbox)
+        channel_gamma_layout.addLayout(r_layout)
+
+        # B通道
+        b_layout = QHBoxLayout()
+        b_layout.addWidget(QLabel("B Gamma:"))
+        self.channel_gamma_b_slider = QSlider(Qt.Horizontal)
+        self.channel_gamma_b_slider.setRange(500, 2000)  # 0.5-2.0, *1000
+        self.channel_gamma_b_slider.setValue(1000)       # 默认1.0
+        b_layout.addWidget(self.channel_gamma_b_slider)
+
+        self.channel_gamma_b_spinbox = QDoubleSpinBox()
+        self.channel_gamma_b_spinbox.setRange(0.5, 2.0)
+        self.channel_gamma_b_spinbox.setSingleStep(0.001)
+        self.channel_gamma_b_spinbox.setDecimals(3)
+        self.channel_gamma_b_spinbox.setValue(1.0)
+        self.channel_gamma_b_spinbox.setFixedWidth(80)
+        b_layout.addWidget(self.channel_gamma_b_spinbox)
+        channel_gamma_layout.addLayout(b_layout)
+
+        # 添加工具提示
+        channel_gamma_group.setToolTip(
+            "分层反差 - 模拟扫描仪的非线性通道响应\n"
+            "调整R/B通道的密度缩放，G通道固定为1.0\n"
+            "仅在启用密度矩阵时生效"
+        )
+
+        layout.addWidget(channel_gamma_group)
         layout.addStretch()
         return widget
 
@@ -616,7 +663,13 @@ class ParameterPanel(QWidget):
             for j in range(3):
                 # 统一由专用槽处理：必要时自动勾选"启用密度矩阵"，并触发参数变更
                 self.matrix_editor_widgets[i][j].valueChanged.connect(self._on_matrix_value_changed)
-        
+
+        # 分层反差信号连接（新增）
+        self.channel_gamma_r_slider.valueChanged.connect(self._on_channel_gamma_r_slider_changed)
+        self.channel_gamma_r_spinbox.valueChanged.connect(self._on_channel_gamma_r_spinbox_changed)
+        self.channel_gamma_b_slider.valueChanged.connect(self._on_channel_gamma_b_slider_changed)
+        self.channel_gamma_b_spinbox.valueChanged.connect(self._on_channel_gamma_b_spinbox_changed)
+
         # 曲线编辑器发出 (curve_name, points)，使用专用槽以丢弃参数并统一触发
         self.curve_editor.curve_changed.connect(self._on_curve_changed)
         
@@ -678,7 +731,13 @@ class ParameterPanel(QWidget):
             # 屏幕反光补偿参数同步 (0.0-0.05 -> 0-500)
             self.glare_compensation_slider.setValue(int(params.screen_glare_compensation * 100000.0))
             self.glare_compensation_spinbox.setValue(params.screen_glare_compensation * 100.0)
-            
+
+            # 分层反差参数同步（新增）
+            self.channel_gamma_r_slider.setValue(int(params.channel_gamma_r * 1000))
+            self.channel_gamma_r_spinbox.setValue(params.channel_gamma_r)
+            self.channel_gamma_b_slider.setValue(int(params.channel_gamma_b * 1000))
+            self.channel_gamma_b_spinbox.setValue(params.channel_gamma_b)
+
             matrix = params.density_matrix if params.density_matrix is not None else np.eye(3)
             print(f"Debug: update_ui_from_params - matrix_name={params.density_matrix_name}, matrix shape={matrix.shape}")
             print(f"Debug: matrix values: {matrix.tolist()}")
@@ -767,6 +826,13 @@ class ParameterPanel(QWidget):
             self.curve_editor.setEnabled(density_curve_checked)
         self.glare_compensation_slider.setEnabled(density_curve_checked)
         self.glare_compensation_spinbox.setEnabled(density_curve_checked)
+
+        # 分层反差控件：跟随密度矩阵开关（新增）
+        matrix_enabled = self.enable_density_matrix_checkbox.isChecked()
+        self.channel_gamma_r_slider.setEnabled(matrix_enabled)
+        self.channel_gamma_r_spinbox.setEnabled(matrix_enabled)
+        self.channel_gamma_b_slider.setEnabled(matrix_enabled)
+        self.channel_gamma_b_spinbox.setEnabled(matrix_enabled)
 
     def _curves_equal(self, a: dict, b: dict) -> bool:
         try:
@@ -933,7 +999,11 @@ class ParameterPanel(QWidget):
         
         # 屏幕反光补偿参数 (UI显示0-20% -> 实际值0.0-0.2)
         params.screen_glare_compensation = self.glare_compensation_spinbox.value() / 100.0
-        
+
+        # 分层反差参数（新增）
+        params.channel_gamma_r = self.channel_gamma_r_spinbox.value()
+        params.channel_gamma_b = self.channel_gamma_b_spinbox.value()
+
         params.enable_density_inversion = self.enable_density_inversion_checkbox.isChecked()
         params.enable_density_matrix = self.enable_density_matrix_checkbox.isChecked()
         params.enable_rgb_gains = self.enable_rgb_gains_checkbox.isChecked()
@@ -1664,9 +1734,50 @@ class ParameterPanel(QWidget):
         # 检查是否修改，并添加星号标记
         if self._is_matrix_modified():
             self._mark_as_modified(self.matrix_combo)
-            
+
         self.parameter_changed.emit()
-        
+
+    # === 分层反差槽函数（新增） ===
+    def _on_channel_gamma_r_slider_changed(self, value: int):
+        """R通道分层反差滑条变化"""
+        if self._is_updating_ui:
+            return
+        gamma_value = value / 1000.0
+        self._is_updating_ui = True
+        self.channel_gamma_r_spinbox.setValue(gamma_value)
+        self._is_updating_ui = False
+        self.parameter_changed.emit()
+
+    def _on_channel_gamma_r_spinbox_changed(self, value: float):
+        """R通道分层反差数值框变化"""
+        if self._is_updating_ui:
+            return
+        slider_value = int(value * 1000)
+        self._is_updating_ui = True
+        self.channel_gamma_r_slider.setValue(slider_value)
+        self._is_updating_ui = False
+        self.parameter_changed.emit()
+
+    def _on_channel_gamma_b_slider_changed(self, value: int):
+        """B通道分层反差滑条变化"""
+        if self._is_updating_ui:
+            return
+        gamma_value = value / 1000.0
+        self._is_updating_ui = True
+        self.channel_gamma_b_spinbox.setValue(gamma_value)
+        self._is_updating_ui = False
+        self.parameter_changed.emit()
+
+    def _on_channel_gamma_b_spinbox_changed(self, value: float):
+        """B通道分层反差数值框变化"""
+        if self._is_updating_ui:
+            return
+        slider_value = int(value * 1000)
+        self._is_updating_ui = True
+        self.channel_gamma_b_slider.setValue(slider_value)
+        self._is_updating_ui = False
+        self.parameter_changed.emit()
+
     def _on_debug_step_changed(self):
         if self._is_updating_ui: return
         # 当checkbox状态改变时，更新控件的enabled状态

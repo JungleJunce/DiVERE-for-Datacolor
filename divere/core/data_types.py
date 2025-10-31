@@ -196,6 +196,13 @@ class Preset:
         if "screen_glare_compensation" in gp:
             cc["screen_glare_compensation"] = gp["screen_glare_compensation"]
 
+        # channel_gamma (分层反差参数，新增)
+        if "channel_gamma_r" in gp and "channel_gamma_b" in gp:
+            cc["channel_gamma"] = {
+                "r": gp["channel_gamma_r"],
+                "b": gp["channel_gamma_b"]
+            }
+
         data["cc_params"] = cc
         return data
 
@@ -272,6 +279,16 @@ class Preset:
         # screen_glare_compensation
         if "screen_glare_compensation" in cc:
             gp["screen_glare_compensation"] = cc["screen_glare_compensation"]
+
+        # channel_gamma (分层反差参数，新增，带默认值兼容旧preset)
+        channel_gamma = cc.get("channel_gamma")
+        if isinstance(channel_gamma, dict):
+            gp["channel_gamma_r"] = float(channel_gamma.get("r", 1.0))
+            gp["channel_gamma_b"] = float(channel_gamma.get("b", 1.0))
+        else:
+            # 兼容旧版本，填充默认值
+            gp["channel_gamma_r"] = 1.0
+            gp["channel_gamma_b"] = 1.0
 
         preset.grading_params = gp
         return preset
@@ -647,6 +664,10 @@ class ColorGradingParams:
     # RGB Gains
     rgb_gains: Tuple[float, float, float] = (0.5, 0.0, 0.0)
 
+    # Channel Gamma (分层反差)
+    channel_gamma_r: float = 1.0
+    channel_gamma_b: float = 1.0
+
     # Density Curve
     density_curve_name: str = "custom" # UI state
     curve_points: List[Tuple[float, float]] = field(default_factory=lambda: [(0.0, 0.0), (1.0, 1.0)])
@@ -689,6 +710,10 @@ class ColorGradingParams:
         
         # 复制屏幕反光补偿参数
         new_params.screen_glare_compensation = self.screen_glare_compensation
+
+        # 复制分层反差参数
+        new_params.channel_gamma_r = self.channel_gamma_r
+        new_params.channel_gamma_b = self.channel_gamma_b
 
         # 复制 transient 状态
         new_params.enable_density_inversion = self.enable_density_inversion
@@ -734,6 +759,8 @@ class ColorGradingParams:
         new_params.rgb_gains = self.rgb_gains  # tuple 是不可变的
         new_params.density_curve_name = self.density_curve_name
         new_params.screen_glare_compensation = self.screen_glare_compensation
+        new_params.channel_gamma_r = self.channel_gamma_r
+        new_params.channel_gamma_b = self.channel_gamma_b
 
         # 共享 numpy 数组和 list 引用（不复制）
         new_params.density_matrix = self.density_matrix  # 共享引用
@@ -764,6 +791,8 @@ class ColorGradingParams:
             'curve_points_g': self.curve_points_g,
             'curve_points_b': self.curve_points_b,
             'screen_glare_compensation': self.screen_glare_compensation,
+            'channel_gamma_r': self.channel_gamma_r,
+            'channel_gamma_b': self.channel_gamma_b,
         }
         if self.density_matrix is not None:
             data['density_matrix'] = self.density_matrix.tolist()
@@ -810,7 +839,13 @@ class ColorGradingParams:
         # 屏幕反光补偿参数
         if "screen_glare_compensation" in data:
             params.screen_glare_compensation = float(data["screen_glare_compensation"])
-        
+
+        # 分层反差参数（新增，带默认值）
+        if "channel_gamma_r" in data:
+            params.channel_gamma_r = float(data["channel_gamma_r"])
+        if "channel_gamma_b" in data:
+            params.channel_gamma_b = float(data["channel_gamma_b"])
+
         # Pipeline控制标志（新增：支持folder_default保存的启用状态）
         if "enable_density_matrix" in data:
             params.enable_density_matrix = bool(data["enable_density_matrix"])
@@ -873,6 +908,12 @@ class ColorGradingParams:
         # 屏幕反光补偿参数
         if 'screen_glare_compensation' in data:
             self.screen_glare_compensation = float(data['screen_glare_compensation'])
+
+        # 分层反差参数（新增）
+        if 'channel_gamma_r' in data:
+            self.channel_gamma_r = float(data['channel_gamma_r'])
+        if 'channel_gamma_b' in data:
+            self.channel_gamma_b = float(data['channel_gamma_b'])
 
 
 @dataclass

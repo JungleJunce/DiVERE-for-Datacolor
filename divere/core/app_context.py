@@ -1388,7 +1388,12 @@ class ApplicationContext(QObject):
                     }
                 },
                 "screen_glare_compensation": self._current_params.screen_glare_compensation,
-                # 新增：保存pipeline控制状态，这些对于folder_default至关重要
+                # 保存 channel_gamma 参数
+                "channel_gamma": {
+                    "r": self._current_params.channel_gamma_r,
+                    "b": self._current_params.channel_gamma_b
+                },
+                # 保存pipeline控制状态
                 "enable_density_matrix": self._current_params.enable_density_matrix,
                 "enable_density_curve": self._current_params.enable_density_curve,
                 "enable_rgb_gains": self._current_params.enable_rgb_gains,

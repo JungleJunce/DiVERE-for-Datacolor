@@ -335,7 +335,8 @@ class MainWindow(QMainWindow):
         
         # 退出
         exit_action = QAction("退出", self)
-        exit_action.setShortcut(QKeySequence.StandardKey.Quit)
+        # 移除快捷键，避免与 Channel Gamma (Ctrl+Q) 冲突
+        # 用户可通过菜单或系统快捷键 (Cmd+W/Alt+F4) 退出
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
         
@@ -1233,6 +1234,10 @@ class MainWindow(QMainWindow):
                 new_params.density_matrix = params_dict['density_matrix']
                 new_params.enable_density_matrix = True
                 new_params.density_matrix_name = "optimized_custom"
+
+            # 强制重置 channel_gamma 为 1.0（色卡优化不包含主观分层反差调整）
+            new_params.channel_gamma_r = 1.0
+            new_params.channel_gamma_b = 1.0
 
             self.context.update_params(new_params)
             final_log_rmse = float(res.get('rmse', 0.0))

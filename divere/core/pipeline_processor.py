@@ -235,7 +235,10 @@ class FilmPipelineProcessor:
             matrix = self._get_density_matrix_from_params(params)
             if matrix is not None and not np.allclose(matrix, np.eye(3)):
                 density_array = self.math_ops.apply_density_matrix(
-                    density_array, matrix, params.density_dmax, use_parallel=False
+                    density_array, matrix, params.density_dmax,
+                    channel_gamma_r=params.channel_gamma_r,
+                    channel_gamma_b=params.channel_gamma_b,
+                    use_parallel=False
                 )
             profile['density_matrix_ms'] = (time.time() - t1) * 1000.0
         
@@ -298,10 +301,13 @@ class FilmPipelineProcessor:
             matrix = self._get_density_matrix_from_params(params)
             if matrix is not None and not np.allclose(matrix, np.eye(3)):
                 density_array = self.math_ops.apply_density_matrix(
-                    density_array, matrix, params.density_dmax, use_parallel=False
+                    density_array, matrix, params.density_dmax,
+                    channel_gamma_r=params.channel_gamma_r,
+                    channel_gamma_b=params.channel_gamma_b,
+                    use_parallel=False
                 )
             profile['density_matrix_ms'] = (time.time() - t1) * 1000.0
-        
+
         # RGB曝光调整
         if params.enable_rgb_gains:
             t2 = time.time()

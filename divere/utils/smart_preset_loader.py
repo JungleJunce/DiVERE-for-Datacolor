@@ -173,7 +173,14 @@ class SmartPresetLoader:
                                         'points': {'rgb': []}  # 触发按名称加载
                                     }
                                     processed_params['density_curve_name'] = curve_data['name']
-                
+
+                # 处理 channel_gamma：将嵌套结构展开为扁平字段
+                if 'channel_gamma' in processed_params and isinstance(processed_params['channel_gamma'], dict):
+                    gamma_data = processed_params['channel_gamma']
+                    processed_params['channel_gamma_r'] = gamma_data.get('r', 1.0)
+                    processed_params['channel_gamma_b'] = gamma_data.get('b', 1.0)
+                    del processed_params['channel_gamma']  # 删除嵌套结构
+
                 preset.grading_params = processed_params
                 
             info(f"Successfully loaded folder default preset", "SmartPresetLoader")

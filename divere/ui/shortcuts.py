@@ -74,6 +74,18 @@ class ShortcutsBinder(QObject):
         add(Qt.Key_F, self._act_gamma_down)     # F: 密度反差-0.01 (降对比)
         add("Shift+F", self._act_gamma_down_fine) # Shift+F: 密度反差-0.001 (精细)
 
+        # 分层反差 - R通道 (亮部红青平衡)
+        add("Ctrl+E", self._act_channel_gamma_r_up)          # Ctrl+E: R Gamma升高 (亮部变红)
+        add("Ctrl+Shift+E", self._act_channel_gamma_r_up_fine)   # 精细调整
+        add("Ctrl+Q", self._act_channel_gamma_r_down)        # Ctrl+Q: R Gamma降低 (亮部变青)
+        add("Ctrl+Shift+Q", self._act_channel_gamma_r_down_fine) # 精细调整
+
+        # 分层反差 - B通道 (亮部蓝黄平衡)
+        add("Ctrl+D", self._act_channel_gamma_b_up)          # Ctrl+D: B Gamma升高 (亮部变蓝)
+        add("Ctrl+Shift+D", self._act_channel_gamma_b_up_fine)   # 精细调整
+        add("Ctrl+A", self._act_channel_gamma_b_down)        # Ctrl+A: B Gamma降低 (亮部变黄)
+        add("Ctrl+Shift+A", self._act_channel_gamma_b_down_fine) # 精细调整
+
     # ---------- 内部：工具 ----------
     def _add(self, seq, slot, context=Qt.ApplicationShortcut):
         sc = QShortcut(QKeySequence(seq), self.host)
@@ -226,6 +238,56 @@ class ShortcutsBinder(QObject):
         def op(p):
             p.density_gamma = max(0.1, min(4.0, p.density_gamma - 0.001))
             self.host._show_status_message(f"密度反差: {p.density_gamma:.3f}")
+        self._with_params(op)
+
+    # Channel Gamma R (亮部分层反差 - 红青平衡)
+    def _act_channel_gamma_r_up(self):
+        def op(p):
+            p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r + 0.01))
+            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变红)")
+        self._with_params(op)
+
+    def _act_channel_gamma_r_up_fine(self):
+        def op(p):
+            p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r + 0.001))
+            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变红)")
+        self._with_params(op)
+
+    def _act_channel_gamma_r_down(self):
+        def op(p):
+            p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r - 0.01))
+            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变青)")
+        self._with_params(op)
+
+    def _act_channel_gamma_r_down_fine(self):
+        def op(p):
+            p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r - 0.001))
+            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变青)")
+        self._with_params(op)
+
+    # Channel Gamma B (亮部分层反差 - 蓝黄平衡)
+    def _act_channel_gamma_b_up(self):
+        def op(p):
+            p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b + 0.01))
+            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变蓝)")
+        self._with_params(op)
+
+    def _act_channel_gamma_b_up_fine(self):
+        def op(p):
+            p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b + 0.001))
+            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变蓝)")
+        self._with_params(op)
+
+    def _act_channel_gamma_b_down(self):
+        def op(p):
+            p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b - 0.01))
+            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变黄)")
+        self._with_params(op)
+
+    def _act_channel_gamma_b_down_fine(self):
+        def op(p):
+            p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b - 0.001))
+            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变黄)")
         self._with_params(op)
 
     def _act_auto_color(self):

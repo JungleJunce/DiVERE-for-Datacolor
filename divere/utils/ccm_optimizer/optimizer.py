@@ -668,7 +668,12 @@ class CCMOptimizer:
         if ui_params:
             if callback:
                 callback(f"使用UI参数作为初值: {ui_params}")
-            self._update_initial_params_from_ui(ui_params)
+            # 强制设置分层反差为默认值（新增）
+            # 原因：优化器优化的是硬件固有特性，分层反差是后期主观调整
+            ui_params_copy = ui_params.copy()
+            ui_params_copy['channel_gamma_r'] = 1.0
+            ui_params_copy['channel_gamma_b'] = 1.0
+            self._update_initial_params_from_ui(ui_params_copy)
             if callback:
                 callback(f"更新后的初始参数: {self.initial_params}")
         else:
