@@ -3,7 +3,7 @@ DiVERE - 专业胶片校色工具
 基于ACEScg Linear工作流的数字化胶片后期处理
 """
 
-__version__ = "2025.10.31"
+__version__ = "2025.11.01"
 __author__ = "V7"
 __email__ = "vanadis@yeah.net"
 
