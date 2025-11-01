@@ -153,10 +153,10 @@ class ShortcutHelpDialog(QDialog):
             ("F", "降低密度反差", "减弱对比度，图像更平坦 (-0.01)"),
 
             # 分层反差快捷键 (标准步长 0.01)
-            ("Ctrl/Cmd+E", "R Gamma升高", "亮部变红，暗部不变 (+0.01)"),
-            ("Ctrl/Cmd+Q", "R Gamma降低", "亮部变青，暗部不变 (-0.01)"),
-            ("Ctrl/Cmd+D", "B Gamma升高", "亮部变蓝，暗部不变 (+0.01)"),
-            ("Ctrl/Cmd+A", "B Gamma降低", "亮部变黄，暗部不变 (-0.01)"),
+            ("Option/Alt+E", "R Gamma升高", "亮部变红，暗部不变 (+0.01)"),
+            ("Option/Alt+Q", "R Gamma降低", "亮部变青，暗部不变 (-0.01)"),
+            ("Option/Alt+D", "B Gamma升高", "亮部变蓝，暗部不变 (+0.01)"),
+            ("Option/Alt+A", "B Gamma降低", "亮部变黄，暗部不变 (-0.01)"),
 
             # 精细调整快捷键 (精细步长 0.001)
             ("Shift+Q", "R通道精细降曝光", "精细调整红色通道 (-0.001)"),
@@ -169,10 +169,10 @@ class ShortcutHelpDialog(QDialog):
             ("Shift+F", "精细降低密度反差", "精细调整对比度 (-0.001)"),
 
             # 分层反差精细调整
-            ("Ctrl/Cmd+Shift+E", "R Gamma精细升高", "精细调整亮部红色 (+0.001)"),
-            ("Ctrl/Cmd+Shift+Q", "R Gamma精细降低", "精细调整亮部青色 (-0.001)"),
-            ("Ctrl/Cmd+Shift+D", "B Gamma精细升高", "精细调整亮部蓝色 (+0.001)"),
-            ("Ctrl/Cmd+Shift+A", "B Gamma精细降低", "精细调整亮部黄色 (-0.001)"),
+            ("Option/Alt+Shift+E", "R Gamma精细升高", "精细调整亮部红色 (+0.001)"),
+            ("Option/Alt+Shift+Q", "R Gamma精细降低", "精细调整亮部青色 (-0.001)"),
+            ("Option/Alt+Shift+D", "B Gamma精细升高", "精细调整亮部蓝色 (+0.001)"),
+            ("Option/Alt+Shift+A", "B Gamma精细降低", "精细调整亮部黄色 (-0.001)"),
 
 
             # AI校色功能

@@ -75,16 +75,16 @@ class ShortcutsBinder(QObject):
         add("Shift+F", self._act_gamma_down_fine) # Shift+F: 密度反差-0.001 (精细)
 
         # 分层反差 - R通道 (亮部红青平衡)
-        add("Ctrl+E", self._act_channel_gamma_r_up)          # Ctrl+E: R Gamma升高 (亮部变红)
-        add("Ctrl+Shift+E", self._act_channel_gamma_r_up_fine)   # 精细调整
-        add("Ctrl+Q", self._act_channel_gamma_r_down)        # Ctrl+Q: R Gamma降低 (亮部变青)
-        add("Ctrl+Shift+Q", self._act_channel_gamma_r_down_fine) # 精细调整
+        add("Alt+E", self._act_channel_gamma_r_up)          # Alt+E: R Gamma升高 (亮部变红)
+        add("Alt+Shift+E", self._act_channel_gamma_r_up_fine)   # 精细调整
+        add("Alt+Q", self._act_channel_gamma_r_down)        # Alt+Q: R Gamma降低 (亮部变青)
+        add("Alt+Shift+Q", self._act_channel_gamma_r_down_fine) # 精细调整
 
         # 分层反差 - B通道 (亮部蓝黄平衡)
-        add("Ctrl+D", self._act_channel_gamma_b_up)          # Ctrl+D: B Gamma升高 (亮部变蓝)
-        add("Ctrl+Shift+D", self._act_channel_gamma_b_up_fine)   # 精细调整
-        add("Ctrl+A", self._act_channel_gamma_b_down)        # Ctrl+A: B Gamma降低 (亮部变黄)
-        add("Ctrl+Shift+A", self._act_channel_gamma_b_down_fine) # 精细调整
+        add("Alt+D", self._act_channel_gamma_b_up)          # Alt+D: B Gamma升高 (亮部变蓝)
+        add("Alt+Shift+D", self._act_channel_gamma_b_up_fine)   # 精细调整
+        add("Alt+A", self._act_channel_gamma_b_down)        # Alt+A: B Gamma降低 (亮部变黄)
+        add("Alt+Shift+A", self._act_channel_gamma_b_down_fine) # 精细调整
 
         # ========== 取色点、中性色功能 ==========
         # 取色点

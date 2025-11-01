@@ -336,7 +336,8 @@ class MainWindow(QMainWindow):
         
         # 退出
         exit_action = QAction("退出", self)
-        # 移除快捷键，避免与 Channel Gamma (Ctrl+Q) 冲突
+        # 移除快捷键，因为 macOS Cmd+Q 是系统级快捷键
+        # Channel Gamma 功能已改用 Option/Alt+Q 等快捷键
         # 用户可通过菜单或系统快捷键 (Cmd+W/Alt+F4) 退出
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
