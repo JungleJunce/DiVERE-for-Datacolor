@@ -732,8 +732,7 @@ class ApplicationContext(QObject):
             self._loading_image = True  # 设置加载标志，延迟预览更新
             self.status_message_changed.emit(f"正在加载图像: {file_path}...")
             # 显式释放旧图像以防止内存泄漏
-            if self._current_image is not None:
-                del self._current_image
+            self._current_image = None
             self._current_image = self.image_manager.load_image(file_path)
             
             # 更新文件夹导航状态

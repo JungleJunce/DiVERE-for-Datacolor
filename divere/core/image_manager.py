@@ -243,7 +243,8 @@ class ImageManager:
             # 如果OpenCV失败，尝试使用PIL
             opencv_error = e
             print(f"[ImageManager] OpenCV loading failed: {type(e).__name__}: {str(e)[:200]}")
-            print(f"[ImageManager] Attempting to load image with PIL (MAX_IMAGE_PIXELS={Image.MAX_IMAGE_PIXELS:,})")
+            max_pixels_str = f"{Image.MAX_IMAGE_PIXELS:,}" if Image.MAX_IMAGE_PIXELS else "Unlimited"
+            print(f"[ImageManager] Attempting to load image with PIL (MAX_IMAGE_PIXELS={max_pixels_str})")
             try:
                 pil_image = Image.open(file_path)
                 original_mode = pil_image.mode
