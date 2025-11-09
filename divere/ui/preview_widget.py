@@ -1358,21 +1358,11 @@ class PreviewWidget(QWidget):
         - 防止 array 被释放后 QImage 访问无效内存
         - 只增加少量内存开销（~17MB for 2000×3000 RGB）
         - 拷贝时间 ~10-20ms，不影响交互体验
+
+        注意：
+        - Monochrome conversion现在统一由MainWindow中的checkbox机制控制
+        - 移除了旧的基于film type的自动conversion，避免双重转换
         """
-        # Check if we should convert to monochrome for B&W film types
-        should_convert_to_mono = False
-        if self.context and hasattr(self.context, 'should_convert_to_monochrome'):
-            should_convert_to_mono = self.context.should_convert_to_monochrome()
-
-        # Convert to monochrome if needed (at display stage only)
-        if should_convert_to_mono and len(array.shape) == 3 and array.shape[2] >= 3:
-            # Convert RGB to luminance using ITU-R BT.709 weights
-            luminance = (0.2126 * array[:, :, 0] +
-                        0.7152 * array[:, :, 1] +
-                        0.0722 * array[:, :, 2])
-            # Convert to grayscale array
-            array = luminance[:, :, np.newaxis].repeat(3, axis=2).astype(array.dtype)
-
         if array.dtype != np.uint8:
             array = np.clip(array, 0, 1)
             array = (array * 255).astype(np.uint8)

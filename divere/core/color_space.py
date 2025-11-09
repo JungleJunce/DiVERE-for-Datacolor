@@ -929,17 +929,17 @@ class ColorSpaceManager:
     def convert_to_monochrome(self, image: ImageData, preserve_ir: bool = True) -> ImageData:
         """
         将彩色图像转换为单色（黑白）图像
-        
+
         Args:
             image: 输入图像
             preserve_ir: 是否保留红外通道（如果存在）
-            
+
         Returns:
             转换后的单色图像
         """
         if image is None or image.array is None:
             return image
-        
+
         array = image.array.copy()
         original_shape = array.shape
         
@@ -956,7 +956,7 @@ class ColorSpaceManager:
             elif channels >= 3:
                 # RGB转换为luminance，使用ITU-R BT.709权重
                 luminance = self._rgb_to_luminance(array[..., :3])
-                
+
                 if channels == 3:
                     # RGB → 3个相同的monochrome通道（保持3通道用于管线兼容性）
                     result_array = np.stack([luminance, luminance, luminance], axis=2)

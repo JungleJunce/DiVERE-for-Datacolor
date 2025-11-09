@@ -88,6 +88,9 @@ class MainWindow(QMainWindow):
         # 控制fit时机的新标志
         self._should_fit_after_image_load: bool = False
         self._should_fit_after_rotation: bool = False
+
+        # 预览显示选项
+        self._monochrome_preview_enabled = False
         
         # 预览后台线程池 - 逻辑迁移到 Context
         # self.thread_pool: QThreadPool = QThreadPool.globalInstance()
@@ -214,6 +217,8 @@ class MainWindow(QMainWindow):
         # Proxy尺寸变化信号连接
         self.parameter_panel.proxy_size_changed.connect(self.context.update_proxy_max_size)
         self.parameter_panel.glare_compensation_realtime_update.connect(self._on_glare_compensation_realtime_update)
+        # 黑白预览信号连接
+        self.parameter_panel.monochrome_preview_changed.connect(self._on_monochrome_preview_changed)
         # 当 UCS 三角拖动结束：注册/切换到一个临时 custom 输入空间，触发代理重建与预览
         self.parameter_panel.custom_primaries_changed.connect(self._on_custom_primaries_changed)
         # LUT导出信号
@@ -2356,6 +2361,13 @@ class MainWindow(QMainWindow):
         self.context._trigger_preview_update()
 
     def _on_preview_updated(self, result_image: ImageData):
+        # 如果启用黑白预览，转换为单色
+        if self._monochrome_preview_enabled:
+            result_image = self.context.color_space_manager.convert_to_monochrome(
+                result_image,
+                preserve_ir=True  # 保留红外通道（如果有）
+            )
+
         self.preview_widget.set_image(result_image)
         # 图像加载后自动适应窗口（保持旧逻辑兼容）
         if self._fit_after_next_preview:
@@ -2611,7 +2623,11 @@ class MainWindow(QMainWindow):
         """ApplicationContext胶片类型改变时的回调 - 同步UI"""
         # Update film type dropdown
         self.parameter_panel.set_film_type(film_type)
-        
+
+        # 根据film type自动调整黑白预览模式
+        is_bw = self.context.film_type_controller.is_monochrome_type(film_type)
+        self.parameter_panel.set_monochrome_preview_enabled(is_bw)
+
         # Apply neutralization for B&W film types immediately
         # This prevents the preview flash issue when loading B&W presets
         self._apply_bw_neutralization_if_needed(film_type)
@@ -2855,7 +2871,13 @@ class MainWindow(QMainWindow):
             self.preview_widget.update_cutoff_compensation(compensation_value)
         except Exception as e:
             print(f"实时更新cut-off显示失败: {e}")
-    
+
+    def _on_monochrome_preview_changed(self, enabled: bool):
+        """黑白预览状态改变时"""
+        self._monochrome_preview_enabled = enabled
+        # 立即刷新预览
+        self.context._trigger_preview_update()
+
     def _show_status_message(self, message: str, timeout: int = 2000):
         """在状态栏显示消息"""
         try:

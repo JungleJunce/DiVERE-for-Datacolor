@@ -96,6 +96,7 @@ class ParameterPanel(QWidget):
     input_colorspace_changed = Signal(str)
     film_type_changed = Signal(str)
     colorchecker_changed = Signal(str)  # 色卡类型变化信号，参数为文件名
+    monochrome_preview_changed = Signal(bool)  # 黑白预览状态变化信号
 
     # Signals for complex actions requiring coordination
     ccm_optimize_requested = Signal()
@@ -595,7 +596,15 @@ class ParameterPanel(QWidget):
         pipeline_layout.addWidget(self.enable_rgb_gains_checkbox)
         pipeline_layout.addWidget(self.enable_density_curve_checkbox)
         layout.addWidget(pipeline_group)
-        
+
+        # 预览设置组
+        preview_settings_group = QGroupBox("预览设置")
+        preview_settings_layout = QVBoxLayout(preview_settings_group)
+        self.monochrome_preview_checkbox = QCheckBox("黑白预览")
+        self.monochrome_preview_checkbox.setToolTip("仅影响预览显示，不改变处理管线")
+        preview_settings_layout.addWidget(self.monochrome_preview_checkbox)
+        layout.addWidget(preview_settings_group)
+
         # LUT导出组
         lut_group = QGroupBox("LUT导出")
         lut_layout = QVBoxLayout(lut_group)
@@ -694,9 +703,12 @@ class ParameterPanel(QWidget):
         # 曲线编辑器发出 (curve_name, points)，使用专用槽以丢弃参数并统一触发
         self.curve_editor.curve_changed.connect(self._on_curve_changed)
         
-        for checkbox in [self.enable_density_inversion_checkbox, self.enable_density_matrix_checkbox, 
+        for checkbox in [self.enable_density_inversion_checkbox, self.enable_density_matrix_checkbox,
                          self.enable_rgb_gains_checkbox, self.enable_density_curve_checkbox]:
             checkbox.toggled.connect(self._on_debug_step_changed)
+
+        # 黑白预览信号连接
+        self.monochrome_preview_checkbox.toggled.connect(self._on_monochrome_preview_toggled)
 
         self.auto_color_single_button.clicked.connect(self.auto_color_requested.emit)
         self.auto_color_multi_button.clicked.connect(self.auto_color_iterative_requested.emit)
@@ -1049,7 +1061,17 @@ class ParameterPanel(QWidget):
         self._is_updating_ui = False
         # 应用对应的UI状态
         self._apply_ui_state_for_film_type(film_type)
-    
+
+    def get_monochrome_preview_enabled(self) -> bool:
+        """获取黑白预览状态"""
+        return self.monochrome_preview_checkbox.isChecked()
+
+    def set_monochrome_preview_enabled(self, enabled: bool):
+        """设置黑白预览状态（用于未来的自动联动）"""
+        self._is_updating_ui = True
+        self.monochrome_preview_checkbox.setChecked(enabled)
+        self._is_updating_ui = False
+
     def _apply_ui_state_for_film_type(self, film_type: str):
         """根据胶片类型应用UI状态配置"""
         ui_config = self.context.film_type_controller.get_ui_state_config(film_type)
@@ -1811,7 +1833,14 @@ class ParameterPanel(QWidget):
         # 当checkbox状态改变时，更新控件的enabled状态
         self._update_controls_enabled_state()
         self.parameter_changed.emit()
-        
+
+    def _on_monochrome_preview_toggled(self, checked: bool):
+        """黑白预览开关切换时"""
+        if self._is_updating_ui:
+            return
+        # 通过信号通知MainWindow
+        self.monochrome_preview_changed.emit(checked)
+
     def _on_auto_color_single_clicked(self):
         if self._is_updating_ui: return
         self.auto_color_requested.emit()

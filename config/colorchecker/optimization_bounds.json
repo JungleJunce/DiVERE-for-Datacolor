@@ -3,8 +3,8 @@
     "version": "1.0",
     "parameter_bounds": {
         "gamma": {
-            "min": 1.999,
-            "max": 2.000,
+            "min": 2.999,
+            "max": 3.000,
             "default": 2.0,
             "description": "密度反差参数"
         },
