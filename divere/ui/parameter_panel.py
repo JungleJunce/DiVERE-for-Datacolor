@@ -176,7 +176,12 @@ class ParameterPanel(QWidget):
         
         content_layout.addWidget(tab_widget)
         content_layout.addStretch()
-        
+
+        # 初始隐藏所有辅助调整控件
+        # 在所有tabs创建完成后调用，确保UI层次结构已完全建立
+        for widget in self.matrix_helper_widgets:
+            widget.setVisible(False)
+
         scroll_area.setWidget(content_widget)
         layout.addWidget(scroll_area)
 
@@ -446,14 +451,19 @@ class ParameterPanel(QWidget):
         matrix_layout.addLayout(matrix_grid)
 
         # === 矩阵辅助调整控件 ===
-        helper_label = QLabel("辅助调整:")
-        matrix_layout.addWidget(helper_label)
+        # 添加控制辅助调整显示的复选框
+        self.aesthetic_matrix_adjustment_checkbox = QCheckBox("美学式调整数字Mask")
+        self.aesthetic_matrix_adjustment_checkbox.setToolTip("显示/隐藏矩阵辅助调整按钮")
+        self.aesthetic_matrix_adjustment_checkbox.setChecked(False)  # 默认不显示
+        matrix_layout.addWidget(self.aesthetic_matrix_adjustment_checkbox)
 
         helper_grid = QGridLayout()
         helper_grid.setSpacing(5)
 
         # 保存按钮引用以便状态管理
         self.matrix_helper_buttons = []
+        # 保存所有辅助调整相关的控件以便切换可见性
+        self.matrix_helper_widgets = []
 
         channel_names = ["红通道", "绿通道", "蓝通道"]
 
@@ -462,10 +472,12 @@ class ParameterPanel(QWidget):
             channel_label = QLabel(channel_names[col])
             channel_label.setAlignment(Qt.AlignCenter)
             helper_grid.addWidget(channel_label, 0, col * 2, 1, 2)
+            self.matrix_helper_widgets.append(channel_label)
 
             # 纯度标签
             purity_label = QLabel("纯度:")
             helper_grid.addWidget(purity_label, 1, col * 2)
+            self.matrix_helper_widgets.append(purity_label)
 
             # 纯度按钮
             purity_layout = QHBoxLayout()
@@ -484,6 +496,7 @@ class ParameterPanel(QWidget):
             # 色相标签
             hue_label = QLabel("色相:")
             helper_grid.addWidget(hue_label, 2, col * 2)
+            self.matrix_helper_widgets.append(hue_label)
 
             # 色相按钮
             hue_layout = QHBoxLayout()
@@ -501,6 +514,7 @@ class ParameterPanel(QWidget):
 
             # 保存按钮引用
             self.matrix_helper_buttons.extend([purity_minus, purity_plus, hue_left, hue_right])
+            self.matrix_helper_widgets.extend([purity_minus, purity_plus, hue_left, hue_right])
 
             # 连接信号
             # 单击触发
@@ -786,6 +800,9 @@ class ParameterPanel(QWidget):
         for checkbox in [self.enable_density_inversion_checkbox, self.enable_density_matrix_checkbox,
                          self.enable_rgb_gains_checkbox, self.enable_density_curve_checkbox]:
             checkbox.toggled.connect(self._on_debug_step_changed)
+
+        # 美学式调整数字Mask复选框信号连接
+        self.aesthetic_matrix_adjustment_checkbox.toggled.connect(self._on_aesthetic_matrix_adjustment_toggled)
 
         # 黑白预览信号连接
         self.monochrome_preview_checkbox.toggled.connect(self._on_monochrome_preview_toggled)
@@ -2073,6 +2090,12 @@ class ParameterPanel(QWidget):
             return
         # 通过信号通知MainWindow
         self.monochrome_preview_changed.emit(checked)
+
+    def _on_aesthetic_matrix_adjustment_toggled(self, checked: bool):
+        """美学式调整数字Mask复选框切换时"""
+        # 切换所有辅助调整控件的可见性
+        for widget in self.matrix_helper_widgets:
+            widget.setVisible(checked)
 
     def _on_auto_color_single_clicked(self):
         if self._is_updating_ui: return
