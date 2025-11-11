@@ -15,7 +15,7 @@ from PySide6.QtWidgets import (
     QScrollArea, QMessageBox, QInputDialog, QFileDialog,
     QApplication
 )
-from PySide6.QtCore import Qt, Signal, QSize
+from PySide6.QtCore import Qt, Signal, QSize, QTimer
 from PySide6.QtGui import QIcon
 
 from divere.core.data_types import ColorGradingParams, Preset
@@ -126,11 +126,15 @@ class ParameterPanel(QWidget):
         self.current_params = self.context.get_current_params().copy()
         self.current_film_type = "color_negative_c41"  # Default film type
         self.selected_colorchecker_file = "original_color_cc24data.json"  # Default reference
-        
+
         self._is_updating_ui = False
         self.context.params_changed.connect(self.on_context_params_changed)
         self.context.image_loaded.connect(self.on_image_loaded)
-        
+
+        # 长按重复触发的定时器
+        self._repeat_timer = None
+        self._repeat_callback = None
+
         self._create_ui()
         self._connect_signals()
         
@@ -499,10 +503,21 @@ class ParameterPanel(QWidget):
             self.matrix_helper_buttons.extend([purity_minus, purity_plus, hue_left, hue_right])
 
             # 连接信号
+            # 单击触发
             purity_minus.clicked.connect(lambda checked=False, c=col: self._adjust_purity(c, increase=False))
             purity_plus.clicked.connect(lambda checked=False, c=col: self._adjust_purity(c, increase=True))
             hue_left.clicked.connect(lambda checked=False, c=col: self._adjust_hue(c, increase_down=False))
             hue_right.clicked.connect(lambda checked=False, c=col: self._adjust_hue(c, increase_down=True))
+
+            # 长按重复触发
+            purity_minus.pressed.connect(lambda c=col: self._start_button_repeat(lambda: self._adjust_purity(c, increase=False)))
+            purity_minus.released.connect(self._stop_button_repeat)
+            purity_plus.pressed.connect(lambda c=col: self._start_button_repeat(lambda: self._adjust_purity(c, increase=True)))
+            purity_plus.released.connect(self._stop_button_repeat)
+            hue_left.pressed.connect(lambda c=col: self._start_button_repeat(lambda: self._adjust_hue(c, increase_down=False)))
+            hue_left.released.connect(self._stop_button_repeat)
+            hue_right.pressed.connect(lambda c=col: self._start_button_repeat(lambda: self._adjust_hue(c, increase_down=True)))
+            hue_right.released.connect(self._stop_button_repeat)
 
         matrix_layout.addLayout(helper_grid)
         layout.addWidget(matrix_group)
@@ -1876,7 +1891,7 @@ class ParameterPanel(QWidget):
             for row in range(3)
         ]
 
-        step = 0.01 if increase else -0.01
+        step = 0.02 if increase else -0.02
         half_step = step / 2.0
         main_idx = col_index  # 主元素索引（对角线元素）
 
@@ -1944,6 +1959,10 @@ class ParameterPanel(QWidget):
         lower_val = self.matrix_editor_widgets[lower_idx][col_index].value()
 
         # 步骤1: 调整辅元素
+        # 红通道(0)和蓝通道(2)的左右按钮行为与绿通道(1)相反
+        if col_index in [0, 2]:
+            increase_down = not increase_down
+
         if increase_down:
             # > 按钮：增下减上
             lower_val += step
@@ -2118,5 +2137,45 @@ class ParameterPanel(QWidget):
             elif event.type() == QEvent.Type.FocusOut:
                 # spinbox失去焦点时结束交互
                 self.glare_compensation_interaction_ended.emit()
-        
+
         return super().eventFilter(obj, event)
+
+    # === 按钮长按重复触发辅助方法 ===
+    def _start_button_repeat(self, callback):
+        """启动按钮长按重复触发
+
+        Args:
+            callback: 要重复调用的函数
+        """
+        # 停止现有定时器
+        self._stop_button_repeat()
+
+        # 保存回调函数
+        self._repeat_callback = callback
+
+        # 创建定时器
+        self._repeat_timer = QTimer(self)
+        self._repeat_timer.timeout.connect(self._on_repeat_triggered)
+
+        # 1秒后首次触发，然后每100ms重复触发
+        self._repeat_timer.setSingleShot(True)
+        self._repeat_timer.start(1000)
+
+    def _stop_button_repeat(self):
+        """停止按钮长按重复触发"""
+        if self._repeat_timer is not None:
+            self._repeat_timer.stop()
+            self._repeat_timer.deleteLater()
+            self._repeat_timer = None
+        self._repeat_callback = None
+
+    def _on_repeat_triggered(self):
+        """定时器触发时的处理"""
+        if self._repeat_callback is not None:
+            # 执行回调
+            self._repeat_callback()
+
+            # 转换为重复定时器（100ms间隔）
+            if self._repeat_timer is not None:
+                self._repeat_timer.setSingleShot(False)
+                self._repeat_timer.start(100)
