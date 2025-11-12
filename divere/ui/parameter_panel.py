@@ -460,6 +460,15 @@ class ParameterPanel(QWidget):
         helper_grid = QGridLayout()
         helper_grid.setSpacing(5)
 
+        # 设置列宽比例：缩小标签列宽度，让按钮列占据更多空间
+        # 偶数列（0,2,4）是标签列，设为较小宽度
+        # 奇数列（1,3,5）是按钮列，设为较大宽度
+        for i in range(6):  # 总共6列：3组 x 2列
+            if i % 2 == 0:  # 标签列
+                helper_grid.setColumnStretch(i, 0)  # 最小宽度
+            else:  # 按钮列
+                helper_grid.setColumnStretch(i, 1)  # 自动扩展
+
         # 保存按钮引用以便状态管理
         self.matrix_helper_buttons = []
         # 保存所有辅助调整相关的控件以便切换可见性
@@ -476,6 +485,8 @@ class ParameterPanel(QWidget):
 
             # 纯度标签
             purity_label = QLabel("纯度:")
+            purity_label.setFixedWidth(35)  # 限制宽度
+            purity_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # 右对齐
             helper_grid.addWidget(purity_label, 1, col * 2)
             self.matrix_helper_widgets.append(purity_label)
 
@@ -495,6 +506,8 @@ class ParameterPanel(QWidget):
 
             # 色相标签
             hue_label = QLabel("色相:")
+            hue_label.setFixedWidth(35)  # 限制宽度
+            hue_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # 右对齐
             helper_grid.addWidget(hue_label, 2, col * 2)
             self.matrix_helper_widgets.append(hue_label)
 
