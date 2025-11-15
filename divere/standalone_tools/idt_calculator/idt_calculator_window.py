@@ -220,7 +220,7 @@ class IDTCalculatorWindow(QMainWindow):
         self.optimize_button.clicked.connect(self._start_optimization)
         button_layout.addWidget(self.optimize_button)
         
-        self.save_button = QPushButton("保存色彩空间")
+        self.save_button = QPushButton("保存IDT基色")
         self.save_button.clicked.connect(self._save_colorspace)
         self.save_button.setEnabled(False)
         button_layout.addWidget(self.save_button)
