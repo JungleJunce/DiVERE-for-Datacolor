@@ -211,7 +211,7 @@ class ParameterPanel(QWidget):
         layout.addWidget(colorspace_group)
         
         # --- Spectral Sharpening Section ---
-        self.enable_scanner_spectral_checkbox = QCheckBox("扫描仪光谱锐化（硬件校正）")
+        self.enable_scanner_spectral_checkbox = QCheckBox("扫描仪光谱锐化（串扰校正）")
         layout.addWidget(self.enable_scanner_spectral_checkbox)
 
         self.ucs_widget = UcsTriangleWidget()
@@ -270,13 +270,13 @@ class ParameterPanel(QWidget):
 
         # 光谱锐化（硬件校正）优化配置开关
         spectral_config_layout = QHBoxLayout()
-        self.optimize_idt_checkbox = QCheckBox("优化IDT线性变换基色")
+        self.optimize_idt_checkbox = QCheckBox("优化IDT线性变换基色（光源-传感器串扰校正）")
         self.optimize_idt_checkbox.setToolTip("优化IDT线性变换基色，消除光源-传感器串扰")
         self.optimize_idt_checkbox.setChecked(False)  # 默认禁用
         self.optimize_idt_checkbox.setVisible(False)
         spectral_config_layout.addWidget(self.optimize_idt_checkbox)
         
-        self.optimize_density_matrix_checkbox = QCheckBox("优化数字Mask")
+        self.optimize_density_matrix_checkbox = QCheckBox("优化数字Mask（密度计-负片串扰校正）")
         self.optimize_density_matrix_checkbox.setToolTip("优化数字Mask消除扫描仪-负片染料引入的串扰")
         self.optimize_density_matrix_checkbox.setChecked(False)  # 默认禁用
         self.optimize_density_matrix_checkbox.setVisible(False)

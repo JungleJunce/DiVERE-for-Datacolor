@@ -395,8 +395,8 @@ class MainWindow(QMainWindow):
         tools_menu.addAction(file_classification_action)
         
         # 精确通道分离IDT计算工具
-        idt_calculator_action = QAction("精确通道分离IDT计算工具", self)
-        idt_calculator_action.setToolTip("通过三张光谱分离图片计算精确的IDT色彩空间")
+        idt_calculator_action = QAction("光源-传感器串扰计算工具", self)
+        idt_calculator_action.setToolTip("通过三张光源图片计算精确的IDT色彩空间")
         idt_calculator_action.triggered.connect(self._open_idt_calculator)
         tools_menu.addAction(idt_calculator_action)
 

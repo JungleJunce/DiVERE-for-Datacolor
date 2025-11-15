@@ -29,11 +29,13 @@ from .idt_optimizer import IDTOptimizer
 try:
     from divere.core.color_space import ColorSpaceManager
     from divere.utils.path_manager import PathManager
+    from divere.utils.enhanced_config_manager import enhanced_config_manager
     from divere.ui.cmaes_progress_dialog import CMAESProgressDialog
 except ImportError as e:
     print(f"警告：无法导入DiVERE组件: {e}")
     ColorSpaceManager = None
     PathManager = None
+    enhanced_config_manager = None
     CMAESProgressDialog = None
 
 
@@ -100,7 +102,7 @@ class IDTCalculatorWindow(QMainWindow):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("精确通道分离IDT计算工具")
+        self.setWindowTitle("光源-传感器串扰计算工具")
         self.setMinimumSize(800, 600)
         
         # 初始化组件
@@ -466,13 +468,13 @@ class IDTCalculatorWindow(QMainWindow):
         if not self.optimization_result:
             QMessageBox.warning(self, "无数据", "没有可保存的优化结果")
             return
-        
+
         try:
             # 获取色彩空间名称
             name, ok = self._get_colorspace_name()
             if not ok or not name:
                 return
-            
+
             # 构建色彩空间配置
             colorspace_info = self.optimization_result['colorspace_info']
             config = {
@@ -482,46 +484,61 @@ class IDTCalculatorWindow(QMainWindow):
                 "white_point": colorspace_info['white_point'],
                 "gamma": 1.0
             }
-            
-            # 确定保存路径
-            if PathManager:
-                try:
-                    config_dir = PathManager.get_config_path("colorspace")
-                except Exception:
-                    # 如果PathManager失败，使用默认路径
-                    config_dir = Path(__file__).parent.parent.parent.parent / "config" / "colorspace"
-            else:
-                # 使用相对于项目根目录的路径
-                config_dir = Path(__file__).parent.parent.parent.parent / "config" / "colorspace"
-            
-            config_dir.mkdir(parents=True, exist_ok=True)
-            config_file = config_dir / f"{name}.json"
-            
+
             # 检查文件是否已存在
-            if config_file.exists():
-                reply = QMessageBox.question(
-                    self, "文件已存在", 
-                    f"色彩空间 '{name}' 已存在，是否覆盖？",
-                    QMessageBox.Yes | QMessageBox.No,
-                    QMessageBox.No
-                )
-                if reply != QMessageBox.Yes:
-                    return
-            
-            # 保存文件
-            with open(config_file, 'w', encoding='utf-8') as f:
-                json.dump(config, f, indent=4, ensure_ascii=False)
-            
+            if enhanced_config_manager:
+                # 使用 enhanced_config_manager 获取配置目录
+                config_dir = Path(enhanced_config_manager.app_config_dir) / "colorspace"
+                config_file = config_dir / f"{name}.json"
+
+                if config_file.exists():
+                    reply = QMessageBox.question(
+                        self, "文件已存在",
+                        f"色彩空间 '{name}' 已存在，是否覆盖？",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No
+                    )
+                    if reply != QMessageBox.Yes:
+                        return
+
+                # 使用 enhanced_config_manager 保存配置
+                success = enhanced_config_manager.save_user_config("colorspace", name, config)
+
+                if not success:
+                    raise Exception("enhanced_config_manager.save_user_config() 返回失败")
+
+                config_file = config_dir / f"{name}.json"  # 更新 config_file 路径用于显示
+            else:
+                # 回退方案：使用相对路径
+                config_dir = Path(__file__).parent.parent.parent.parent / "config" / "colorspace"
+                config_dir.mkdir(parents=True, exist_ok=True)
+                config_file = config_dir / f"{name}.json"
+
+                # 检查文件是否已存在
+                if config_file.exists():
+                    reply = QMessageBox.question(
+                        self, "文件已存在",
+                        f"色彩空间 '{name}' 已存在，是否覆盖？",
+                        QMessageBox.Yes | QMessageBox.No,
+                        QMessageBox.No
+                    )
+                    if reply != QMessageBox.Yes:
+                        return
+
+                # 保存文件
+                with open(config_file, 'w', encoding='utf-8') as f:
+                    json.dump(config, f, indent=4, ensure_ascii=False)
+
             # 通知ColorSpaceManager重新加载（如果存在）
             if self.color_space_manager:
                 try:
-                    self.color_space_manager.reload_colorspaces()
+                    self.color_space_manager.reload_config()
                 except Exception as e:
                     self._log_message(f"重新加载色彩空间时出错: {e}")
-            
+
             QMessageBox.information(self, "保存成功", f"色彩空间已保存到:\n{config_file}")
             self._log_message(f"色彩空间已保存: {config_file}")
-            
+
         except Exception as e:
             QMessageBox.critical(self, "保存失败", f"保存色彩空间时出错: {str(e)}")
             self._log_message(f"保存失败: {str(e)}")
