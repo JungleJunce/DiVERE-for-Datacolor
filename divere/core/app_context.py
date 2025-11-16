@@ -139,6 +139,10 @@ class ApplicationContext(QObject):
             self._proxy_shared_memory = None  # shared_memory.SharedMemory 实例
             self._result_poll_timer = QTimer()
             self._result_poll_timer.timeout.connect(self._poll_preview_result)
+
+            # 注册 atexit handler 确保程序退出时清理 worker 进程
+            import atexit
+            atexit.register(self._atexit_cleanup)
         else:
             # 线程模式相关字段
             self.thread_pool: QThreadPool = QThreadPool.globalInstance()
@@ -2577,6 +2581,18 @@ class ApplicationContext(QObject):
             else:
                 # 正常结果
                 self._on_preview_result(result)
+
+    def _atexit_cleanup(self):
+        """程序退出时的清理函数（atexit handler）
+
+        确保 worker 进程和 shared memory 被正确清理
+        """
+        try:
+            if hasattr(self, '_preview_worker_process'):
+                self._shutdown_preview_worker_process()
+        except:
+            # atexit handler 中不应该抛出异常
+            pass
 
     def cleanup(self):
         """清理 ApplicationContext 的资源，防止内存泄漏

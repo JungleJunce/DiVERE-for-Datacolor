@@ -189,6 +189,15 @@ class PreviewWorkerProcess:
 
         self.process: Optional[Process] = None
 
+        # 崩溃检测和自动重启
+        self._restart_count = 0
+        self._max_restart_attempts = 3  # 最多自动重启 3 次
+        self._last_request_time = 0.0
+        self._request_timeout = 5.0  # 5 秒超时
+
+        # Shared memory 泄漏追踪
+        self._active_result_shm = set()  # 追踪未清理的 result shared memory
+
     def start(self):
         """启动 worker 进程"""
         if self.process is not None and self.process.is_alive():
@@ -221,9 +230,13 @@ class PreviewWorkerProcess:
             params: ColorGradingParams 实例
             convert_to_monochrome: 是否转换为单色
         """
+        # 检查 worker 是否存活，如果崩溃则尝试重启
         if not self.is_alive():
-            logger.warning("Worker process not alive, cannot request preview")
-            return
+            if self._try_restart():
+                logger.info("Worker process restarted successfully")
+            else:
+                logger.error("Worker process not alive and restart failed")
+                return
 
         # 清空旧请求（只保留最新）
         while not self.queue_request.empty():
@@ -240,6 +253,7 @@ class PreviewWorkerProcess:
                 'convert_to_monochrome': convert_to_monochrome,
                 'timestamp': time.time()
             }, timeout=0.1)
+            self._last_request_time = time.time()
         except queue.Full:
             logger.warning("Request queue full, dropping old request")
             # 再次尝试清空并发送
@@ -251,8 +265,46 @@ class PreviewWorkerProcess:
                     'convert_to_monochrome': convert_to_monochrome,
                     'timestamp': time.time()
                 }, timeout=0.1)
+                self._last_request_time = time.time()
             except:
                 pass
+
+    def _try_restart(self) -> bool:
+        """尝试重启 worker 进程
+
+        Returns:
+            bool: 重启是否成功
+        """
+        if self._restart_count >= self._max_restart_attempts:
+            logger.error(f"Worker restart failed: exceeded max attempts ({self._max_restart_attempts})")
+            return False
+
+        logger.warning(f"Worker process died, attempting restart ({self._restart_count + 1}/{self._max_restart_attempts})")
+
+        try:
+            # 清理旧进程
+            if self.process is not None:
+                try:
+                    self.process.join(timeout=0.5)
+                except:
+                    pass
+                self.process = None
+
+            # 重新启动
+            self.start()
+            time.sleep(0.1)
+
+            # 验证启动成功
+            if self.is_alive():
+                self._restart_count += 1
+                return True
+            else:
+                logger.error("Worker process failed to start after restart")
+                return False
+
+        except Exception as e:
+            logger.error(f"Worker restart exception: {e}")
+            return False
 
     def try_get_result(self):
         """尝试获取结果（非阻塞）
@@ -262,6 +314,14 @@ class PreviewWorkerProcess:
             Exception: 处理出错
             None: 暂无结果
         """
+        # 超时检测：如果请求发出后很久没有响应，可能 worker 卡住了
+        if self._last_request_time > 0:
+            elapsed = time.time() - self._last_request_time
+            if elapsed > self._request_timeout:
+                logger.warning(f"Worker timeout detected ({elapsed:.1f}s > {self._request_timeout}s)")
+                # 不自动重启，只记录警告（避免频繁重启）
+                # 用户下次操作时会触发重启
+
         try:
             result_info = self.queue_result.get_nowait()
         except queue.Empty:
@@ -271,10 +331,14 @@ class PreviewWorkerProcess:
             return Exception(result_info['message'])
 
         # 从 shared memory 读取结果
+        shm_name = result_info['shm_name']
         try:
             from divere.core.data_types import ImageData
 
-            shm = shared_memory.SharedMemory(name=result_info['shm_name'])
+            # 追踪 shared memory（用于泄漏检测）
+            self._active_result_shm.add(shm_name)
+
+            shm = shared_memory.SharedMemory(name=shm_name)
             result_array = np.ndarray(
                 tuple(result_info['shape']),
                 dtype=result_info['dtype'],
@@ -291,10 +355,21 @@ class PreviewWorkerProcess:
             shm.close()
             shm.unlink()
 
+            # 从追踪集合中移除
+            self._active_result_shm.discard(shm_name)
+
             return result_image
 
         except Exception as e:
             logger.error(f"Failed to read result from shared memory: {e}")
+            # 尝试清理泄漏的 shared memory
+            try:
+                shm = shared_memory.SharedMemory(name=shm_name)
+                shm.close()
+                shm.unlink()
+                self._active_result_shm.discard(shm_name)
+            except:
+                pass
             return Exception(f"Failed to read result: {e}")
 
     def shutdown(self):
@@ -328,6 +403,7 @@ class PreviewWorkerProcess:
 
         # 清理残留资源
         self._cleanup_queues()
+        self._cleanup_leaked_shm()
 
     def _cleanup_queues(self):
         """清理队列和残留的 shared memory"""
@@ -351,3 +427,21 @@ class PreviewWorkerProcess:
                         pass
             except:
                 break
+
+    def _cleanup_leaked_shm(self):
+        """清理泄漏的 shared memory（从追踪集合）"""
+        if not self._active_result_shm:
+            return
+
+        logger.warning(f"Cleaning up {len(self._active_result_shm)} leaked shared memory blocks")
+
+        for shm_name in list(self._active_result_shm):
+            try:
+                shm = shared_memory.SharedMemory(name=shm_name)
+                shm.close()
+                shm.unlink()
+                logger.info(f"Cleaned up leaked shared memory: {shm_name}")
+            except Exception as e:
+                logger.debug(f"Failed to cleanup shared memory {shm_name}: {e}")
+
+        self._active_result_shm.clear()
