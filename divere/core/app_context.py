@@ -205,6 +205,7 @@ class ApplicationContext(QObject):
         """根据配置和平台决定是否使用进程隔离
 
         进程隔离用于解决 macOS heap 内存不归还问题。
+        配置项位于 config/app_settings.json 的 ui.use_process_isolation
         参考文档：PROCESS_ISOLATION_ANALYSIS.md
 
         Returns:
@@ -212,15 +213,10 @@ class ApplicationContext(QObject):
         """
         import platform
 
-        # 从配置读取（支持环境变量覆盖）
-        import os
-        env_setting = os.environ.get('DIVERE_PROCESS_ISOLATION', None)
-        if env_setting:
-            config_value = env_setting.lower()
-        else:
-            config_value = enhanced_config_manager.get_ui_setting(
-                "use_process_isolation", "never"  # 默认禁用，等稳定后改为 "auto"
-            )
+        # 从配置文件读取（config/app_settings.json）
+        config_value = enhanced_config_manager.get_ui_setting(
+            "use_process_isolation", "never"  # 默认禁用，等稳定后改为 "auto"
+        ).lower()
 
         if config_value == "never":
             return False

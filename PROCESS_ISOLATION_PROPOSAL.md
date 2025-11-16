@@ -626,13 +626,13 @@ class ApplicationContext(QObject):
 
 #### 5.3.3 回退机制
 
-- [x] 配置开关实现（环境变量 + UI配置）
+- [x] 配置开关实现（config/app_settings.json）
 - [x] 进程启动失败时自动回退到线程模式
 - [x] 平台检测（Windows默认禁用）
 - [x] 文档和用户提示
 
 **估算**：0.5 天
-**实际完成**：已完成（提交 1212993）
+**实际完成**：已完成（提交 1212993），配置方式已简化为仅使用配置文件
 
 #### 5.3.4 文档
 
@@ -693,9 +693,12 @@ class ApplicationContext(QObject):
 ### 7.1 配置开关（无后效性保证）
 
 ```python
-# divere/config/defaults.py 或环境变量
-ENABLE_PROCESS_ISOLATION = os.environ.get('DIVERE_PROCESS_ISOLATION', 'auto')
-# 值: 'auto', 'always', 'never'
+# config/app_settings.json
+{
+  "ui": {
+    "use_process_isolation": "never"  // 值: 'auto', 'always', 'never'
+  }
+}
 
 # app_context.py
 class ApplicationContext:
@@ -703,7 +706,10 @@ class ApplicationContext:
         self._use_process_isolation = self._should_use_process_isolation()
 
     def _should_use_process_isolation(self):
-        config = ENABLE_PROCESS_ISOLATION
+        # 从配置文件读取（config/app_settings.json）
+        config = enhanced_config_manager.get_ui_setting(
+            "use_process_isolation", "never"
+        ).lower()
 
         if config == 'never':
             return False
@@ -772,7 +778,7 @@ else:
 ```
 
 **回滚策略**：
-- 设置 `ENABLE_PROCESS_ISOLATION='never'`
+- 修改 `config/app_settings.json` 设置为 `"use_process_isolation": "never"`
 - 或者删除 `preview_worker_process.py`
 - 旧代码完全不受影响
 
@@ -1223,20 +1229,22 @@ def test_memory_leak_on_multiple_switches():
 
 ### 配置方式
 
-```bash
-# 环境变量（推荐用于测试）
-export DIVERE_PROCESS_ISOLATION=always  # 强制启用
-export DIVERE_PROCESS_ISOLATION=never   # 强制禁用
-export DIVERE_PROCESS_ISOLATION=auto    # 自动（macOS/Linux启用，Windows禁用）
+```json
+// config/app_settings.json（唯一配置方式）
+{
+  "ui": {
+    "use_process_isolation": "never"  // always | never | auto
+  }
+}
 
-# UI配置（推荐用于用户）
-# enhanced_config_manager.get_ui_setting("use_process_isolation", "never")
-# 当前默认：never（待稳定后改为 auto）
+// 当前默认：never（待稳定后改为 auto）
+// 配置修改后需要重启应用
 ```
 
 ### 无后效性验证
 
-- ✅ 配置开关完备：可随时禁用进程隔离
+- ✅ 配置开关完备：修改 `config/app_settings.json` 即可禁用
+- ✅ 无外部依赖：不使用环境变量，仅通过配置文件控制
 - ✅ 自动回退机制：进程启动失败时自动回退到线程模式
 - ✅ 平台检测：Windows 默认禁用
 - ✅ 代码隔离：新代码在独立文件中，旧代码保持不变
@@ -1297,8 +1305,9 @@ export DIVERE_PROCESS_ISOLATION=auto    # 自动（macOS/Linux启用，Windows�
 
 ---
 
-**文档版本**：2.0
+**文档版本**：2.1
 **创建日期**：2025-11-16
 **最后更新**：2025-11-16
 **作者**：Claude (基于用户需求和代码库分析)
 **状态**：✅ **已完整实施并验证** - Phase 1-3 全部完成，无后效性验证通过
+**配置方式**：仅通过 `config/app_settings.json` 控制，无环境变量依赖

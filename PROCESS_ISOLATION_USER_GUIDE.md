@@ -24,67 +24,55 @@ DiVERE 从 2025-11 版本开始引入了**进程隔离**功能，用于优化内
 
 ## 配置方式
 
-进程隔离功能支持两种配置方式：**环境变量**和 **UI 配置**。
+进程隔离功能通过 **配置文件** 控制，配置项位于 `config/app_settings.json`。
 
-### 方式一：环境变量（推荐用于测试）
+### 配置文件设置（唯一配置方式）
 
-通过设置环境变量 `DIVERE_PROCESS_ISOLATION` 来控制进程隔离功能：
+编辑 `config/app_settings.json` 文件：
 
-```bash
-# macOS/Linux
-export DIVERE_PROCESS_ISOLATION=always   # 强制启用
-export DIVERE_PROCESS_ISOLATION=never    # 强制禁用
-export DIVERE_PROCESS_ISOLATION=auto     # 自动模式（默认）
-
-# 启动应用
-python -m divere
+```json
+{
+  "ui": {
+    "use_process_isolation": "never"  // 配置值：never | always | auto
+  }
+}
 ```
 
-```powershell
-# Windows PowerShell
-$env:DIVERE_PROCESS_ISOLATION = "always"   # 强制启用
-$env:DIVERE_PROCESS_ISOLATION = "never"    # 强制禁用
-$env:DIVERE_PROCESS_ISOLATION = "auto"     # 自动模式（默认）
+配置值说明：
+- **`never`**：禁用进程隔离，使用传统线程模式
+- **`always`**：强制启用进程隔离
+- **`auto`**：根据操作系统自动决定（macOS/Linux 启用，Windows 禁用）
 
-# 启动应用
-python -m divere
-```
-
-### 方式二：UI 配置（推荐用于日常使用）
-
-在应用的配置界面中，可以通过设置项控制进程隔离功能：
-
-1. 打开 DiVERE 应用
-2. 进入设置/配置界面
-3. 找到"进程隔离"或"内存优化"选项
-4. 选择以下模式之一：
-   - **自动（auto）**：根据操作系统自动决定（macOS/Linux 启用，Windows 禁用）
-   - **始终启用（always）**：强制启用进程隔离
-   - **始终禁用（never）**：使用传统线程模式
-
-> 💡 **提示**：环境变量的优先级高于 UI 配置。如果设置了环境变量，UI 配置将被覆盖。
+修改配置后，需要重启应用才能生效。
 
 ---
 
-## 配置值说明
+## 配置值详细说明
 
-| 配置值 | 说明 | 适用场景 |
+| 配置值 | 行为 | 适用场景 |
 |--------|------|---------|
-| `auto` | 自动模式（默认）| macOS/Linux 启用，Windows 禁用 | 大多数用户推荐 |
-| `always` | 强制启用 | 手动测试、内存敏感环境 | 内存占用问题严重时 |
-| `never` | 强制禁用 | 兼容性测试、调试问题 | 遇到兼容性问题时 |
+| `never` | 禁用进程隔离（默认） | 日常使用、稳定性优先 |
+| `always` | 强制启用进程隔离 | 内存占用问题严重时 |
+| `auto` | 根据平台自动决定 | macOS/Linux 启用，Windows 禁用 |
 
 ---
 
 ## 默认行为
 
-如果不进行任何配置，DiVERE 将使用**自动模式**：
+如果不修改 `config/app_settings.json`，DiVERE 使用默认值 **`never`**：
 
-- **macOS**：进程隔离**禁用**（当前版本，未来稳定后将改为启用）
-- **Linux**：进程隔离**禁用**（当前版本，未来稳定后将改为启用）
-- **Windows**：进程隔离**禁用**（由于 multiprocessing 的限制）
+- **所有平台**：进程隔离**禁用**
 
-> 📝 **注意**：当前版本（2025-11）默认禁用进程隔离，需要手动配置启用。未来版本在稳定性验证后，macOS/Linux 将默认启用。
+如需启用进程隔离，请手动修改配置文件：
+```json
+{
+  "ui": {
+    "use_process_isolation": "always"  // 或 "auto"
+  }
+}
+```
+
+> 📝 **注意**：当前版本（2025-11）默认禁用进程隔离。在稳定性验证后，未来版本可能将默认改为 `auto`（macOS/Linux 自动启用）。
 
 ---
 
@@ -143,13 +131,21 @@ python -m divere
 
 ### Q4: 如果遇到问题怎么办？
 
-1. **禁用进程隔离**：设置环境变量 `DIVERE_PROCESS_ISOLATION=never`
+1. **禁用进程隔离**：修改 `config/app_settings.json`：
+   ```json
+   {
+     "ui": {
+       "use_process_isolation": "never"
+     }
+   }
+   ```
 2. **查看日志**：检查应用日志，搜索 "Worker process" 相关的错误信息
 3. **报告问题**：在 GitHub Issues 中报告问题，包括：
    - 操作系统和版本
    - Python 版本
    - 错误日志
    - 复现步骤
+   - `config/app_settings.json` 中的配置
 
 ### Q5: 如何验证进程隔离是否已启用？
 
@@ -209,9 +205,11 @@ python -m divere
   - 基础架构实现
   - 异常处理和自动恢复
   - 全面测试验证
+  - 配置方式：仅使用 `config/app_settings.json`（移除环境变量控制）
 
 ---
 
-**文档版本**：1.0
+**文档版本**：2.0
 **创建日期**：2025-11-16
 **最后更新**：2025-11-16
+**配置方式**：仅通过 `config/app_settings.json` 控制，无外部环境变量依赖

@@ -8,6 +8,12 @@
 - 内存释放验证
 - 异常处理和恢复
 
+配置要求：
+在运行测试前，需要手动设置 config/app_settings.json 中的：
+  "ui": {
+    "use_process_isolation": "always"
+  }
+
 参考文档：PROCESS_ISOLATION_PROPOSAL.md 附录B
 """
 
@@ -21,9 +27,6 @@ from pathlib import Path
 # 添加项目路径
 project_root = Path(__file__).parent.parent
 sys.path.insert(0, str(project_root))
-
-# 设置环境变量启用进程隔离
-os.environ['DIVERE_PROCESS_ISOLATION'] = 'always'
 
 from PyQt6.QtWidgets import QApplication
 from PyQt6.QtCore import QTimer
@@ -328,10 +331,11 @@ class ProcessIsolationTester:
         # 检查进程隔离是否启用
         if not self.context._use_process_isolation:
             print("\n❌ 进程隔离未启用，请检查配置")
-            print(f"   环境变量 DIVERE_PROCESS_ISOLATION: {os.environ.get('DIVERE_PROCESS_ISOLATION')}")
+            print(f"   请在 config/app_settings.json 中设置：")
+            print(f'   "ui": {{"use_process_isolation": "always"}}')
             return False
 
-        print(f"✅ 进程隔离已启用")
+        print(f"✅ 进程隔离已启用（从 config/app_settings.json 读取）")
 
         # 设置测试图片
         if not self.setup_test_images():
