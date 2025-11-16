@@ -53,12 +53,17 @@ if str(project_root) not in sys.path:
 
 from PySide6.QtWidgets import QApplication
 from PySide6.QtCore import Qt
+import multiprocessing
 
 from divere.ui.main_window import MainWindow
 
 
 def main():
     """主函数"""
+    # Windows multiprocessing 支持（PyInstaller 打包必需）
+    # 必须在创建任何 Process 之前调用，macOS/Linux 会自动忽略
+    multiprocessing.freeze_support()
+
     # 创建Qt应用
     app = QApplication(sys.argv)
     app.setApplicationName("DiVERE")
