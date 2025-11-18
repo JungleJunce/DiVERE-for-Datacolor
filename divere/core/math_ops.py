@@ -253,13 +253,25 @@ class FilmMathOps:
     
     def _density_inversion_lut_optimized(self, image_array: np.ndarray, gamma: float,
                                         dmax: float, pivot: float, invert: bool = True) -> np.ndarray:
-        """优化版本：使用LUT查表"""
-        lut_size = 32768  # 优化：32K比65K更快且精度相同
+        """优化版本：使用对数空间LUT查表"""
+        lut_size = 32768  # 32K + 对数空间，欠曝光区域精度提升 30-300 倍
         lut = self._get_density_inversion_lut(gamma, dmax, pivot, invert, lut_size)
 
-        # 将浮点图像转换为整数索引
-        img_clipped = np.clip(image_array, 0.0, 1.0)
-        indices = np.round(img_clipped * (lut_size - 1)).astype(np.uint16)
+        # 对数空间索引（解决欠曝光区域色阶断裂问题）
+        LOG_MIN = -6.0  # 对应 img = 10^-6 = 0.000001
+        LOG_MAX = 0.0   # 对应 img = 10^0 = 1.0
+
+        # 将图像值 clip 到对数空间范围
+        img_clipped = np.clip(image_array, 10**LOG_MIN, 1.0)
+
+        # 转换到对数空间
+        log_img = np.log10(img_clipped)
+
+        # 在对数空间归一化到 [0, 1]
+        normalized = (log_img - LOG_MIN) / (LOG_MAX - LOG_MIN)
+
+        # 计算索引
+        indices = np.round(normalized * (lut_size - 1)).astype(np.uint16)
 
         # 查表
         result_array = np.take(lut, indices)
@@ -268,32 +280,38 @@ class FilmMathOps:
     
     def _density_inversion_lut_parallel(self, image_array: np.ndarray, gamma: float,
                                        dmax: float, pivot: float, invert: bool = True) -> np.ndarray:
-        """并行版本：分块处理+LUT查表"""
+        """并行版本：分块处理+对数空间LUT查表"""
         lut_size = 32768
         lut = self._get_density_inversion_lut(gamma, dmax, pivot, invert, lut_size)
-        
+
         h, w, c = image_array.shape
         result = np.zeros_like(image_array)
-        
+
         # 计算分块数量
         blocks_h = (h + self.block_size - 1) // self.block_size
         blocks_w = (w + self.block_size - 1) // self.block_size
-        
+
+        # 对数空间参数（与单线程版本一致）
+        LOG_MIN = -6.0
+        LOG_MAX = 0.0
+
         def process_block(args):
             i, j = args
             start_h = i * self.block_size
             end_h = min((i + 1) * self.block_size, h)
             start_w = j * self.block_size
             end_w = min((j + 1) * self.block_size, w)
-            
+
             # 提取块
             block = image_array[start_h:end_h, start_w:end_w, :]
-            
-            # LUT查表处理
-            img_clipped = np.clip(block, 0.0, 1.0)
-            indices = np.round(img_clipped * (lut_size - 1)).astype(np.uint16)
+
+            # 对数空间LUT查表处理
+            img_clipped = np.clip(block, 10**LOG_MIN, 1.0)
+            log_img = np.log10(img_clipped)
+            normalized = (log_img - LOG_MIN) / (LOG_MAX - LOG_MIN)
+            indices = np.round(normalized * (lut_size - 1)).astype(np.uint16)
             block_result = np.take(lut, indices)
-            
+
             return (start_h, end_h, start_w, end_w, block_result.astype(block.dtype))
         
         # 并行处理所有块
@@ -351,14 +369,21 @@ class FilmMathOps:
     
     def _get_density_inversion_lut(self, gamma: float, dmax: float, pivot: float,
                                   invert: bool = True, size: int = 32768) -> np.ndarray:
-        """获取或生成密度反相LUT"""
-        key = ("dens_inv", round(float(gamma), 6), round(float(dmax), 6),
+        """获取或生成密度反相LUT（对数空间优化版）"""
+        # 使用新的缓存 key（区分对数空间版本）
+        key = ("dens_inv_log", round(float(gamma), 6), round(float(dmax), 6),
                round(float(pivot), 6), bool(invert), int(size))
         lut = self._lut1d_cache.get(key)
 
         if lut is None:
-            # 生成LUT（根据 invert 控制正负号）
-            xs = np.linspace(0.0, 1.0, int(size), dtype=np.float64)
+            # 在对数空间生成采样点（解决欠曝光区域精度问题）
+            LOG_MIN = -6.0  # 对应 img = 10^-6 = 0.000001
+            LOG_MAX = 0.0   # 对应 img = 10^0 = 1.0
+
+            log_xs = np.linspace(LOG_MIN, LOG_MAX, int(size), dtype=np.float64)
+            xs = np.power(10.0, log_xs)  # 对数空间 → 线性空间
+
+            # 原有的 density inversion 数学（保持不变）
             safe = np.maximum(xs, 1e-10)
             log_img = np.log10(safe)
             original_density = -log_img if invert else log_img
@@ -565,7 +590,7 @@ class FilmMathOps:
     def apply_density_curve(self, density_array: np.ndarray, 
                            curve_points: Optional[List[Tuple[float, float]]] = None,
                            channel_curves: Optional[Dict[str, List[Tuple[float, float]]]] = None,
-                           lut_size: int = 512,
+                           lut_size: int = 8192,
                            use_parallel: bool = True,
                            use_optimization: bool = True,
                            screen_glare_compensation: float = 0.0) -> np.ndarray:
