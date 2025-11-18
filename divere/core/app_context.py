@@ -1974,26 +1974,40 @@ class ApplicationContext(QObject):
     def set_orientation(self, degrees: int):
         """设置当前profile的orientation"""
         try:
+            print(f"[DEBUG] set_orientation() 开始执行, degrees={degrees}")
+
             deg = int(degrees) % 360
             # 规范到 0/90/180/270
             choices = [0, 90, 180, 270]
             normalized = min(choices, key=lambda x: abs(x - deg))
-            
+            print(f"[DEBUG] set_orientation(): 规范化后的角度={normalized}, profile_kind={self._current_profile_kind}")
+
             # 直接写入对应的数据源
             if self._current_profile_kind == 'contactsheet':
+                print(f"[DEBUG] set_orientation(): 设置contactsheet orientation={normalized}")
                 self._contactsheet_profile.orientation = normalized
             elif self._active_crop_id:
                 crop = self.get_active_crop_instance()
+                print(f"[DEBUG] set_orientation(): crop模式, crop={'存在' if crop else '不存在'}")
                 if crop:
+                    print(f"[DEBUG] set_orientation(): 设置crop orientation={normalized}")
                     crop.orientation = normalized
-            
+
             # 触发预览更新
             if self._current_image:
+                print("[DEBUG] set_orientation(): 准备proxy和触发预览更新")
                 self._prepare_proxy()
                 self._trigger_preview_update()
                 self._autosave_timer.start()
-        except Exception:
-            pass
+            else:
+                print("[WARNING] set_orientation(): 没有当前图像，跳过预览更新")
+
+            print("[DEBUG] set_orientation() 执行完成")
+        except Exception as e:
+            import traceback
+            error_msg = f"设置orientation失败: {str(e)}\n{traceback.format_exc()}"
+            print(f"[ERROR] {error_msg}")
+            self.status_message_changed.emit(error_msg)
     
     def _ensure_ui_state_sync_for_monochrome(self):
         """确保黑白模式下UI状态正确同步（延迟调用以避免时序问题）"""
@@ -2009,38 +2023,72 @@ class ApplicationContext(QObject):
         纯净的旋转逻辑：crop和全局orientation完全分离
         """
         try:
+            print(f"[DEBUG] rotate() 开始执行, direction={direction}")
+
+            # 验证当前状态
+            if not self._current_image:
+                print("[WARNING] rotate(): 没有当前图像，取消旋转操作")
+                return
+
             step = 90 if int(direction) >= 0 else -90
-            
+            print(f"[DEBUG] rotate(): step={step}, crop_focused={self._crop_focused}, profile_kind={self._current_profile_kind}")
+
             if self._crop_focused or self._current_profile_kind == 'crop':
                 # 聚焦或裁剪Profile下：只旋转当前crop的orientation
                 crop_instance = self.get_active_crop_instance()
+                print(f"[DEBUG] rotate(): crop模式, crop_instance={'存在' if crop_instance else '不存在'}")
                 if crop_instance:
+                    old_orientation = crop_instance.orientation
                     new_orientation = (crop_instance.orientation + step) % 360
+                    print(f"[DEBUG] rotate(): 更新crop orientation: {old_orientation} -> {new_orientation}")
                     # 仅更新当前裁剪的方向，保留其它裁剪
                     self.update_active_crop_orientation(new_orientation)
+                    print("[DEBUG] rotate(): 准备proxy...")
                     self._prepare_proxy()
+                    print("[DEBUG] rotate(): 触发预览更新...")
                     self._trigger_preview_update()
+                    print("[DEBUG] rotate(): 启动自动保存计时器")
                     self._autosave_timer.start()
+                else:
+                    print("[WARNING] rotate(): crop模式下没有活动crop实例")
             else:
                 # 非聚焦状态：只旋转contactsheet orientation（不影响crop）
                 current_orientation = self.get_current_orientation()
                 new_deg = (current_orientation + step) % 360
+                print(f"[DEBUG] rotate(): contactsheet模式, orientation: {current_orientation} -> {new_deg}")
                 self.set_orientation(new_deg)
                 # 注意：不同步crop的orientation，保持完全分离
-            
+
             # 发射旋转完成信号，让MainWindow知道需要fit to window
+            print("[DEBUG] rotate(): 发射rotation_completed信号")
             self.rotation_completed.emit()
-        except Exception:
-            pass
+            print("[DEBUG] rotate() 执行完成")
+        except Exception as e:
+            import traceback
+            error_msg = f"旋转操作失败: {str(e)}\n{traceback.format_exc()}"
+            print(f"[ERROR] {error_msg}")
+            self.status_message_changed.emit(error_msg)
 
     def update_active_crop_orientation(self, orientation: int) -> None:
         """仅更新当前活跃裁剪的 orientation，保留所有裁剪与激活状态。"""
         try:
+            print(f"[DEBUG] update_active_crop_orientation() 开始执行, orientation={orientation}")
+
             crop_instance = self.get_active_crop_instance()
             if crop_instance:
-                crop_instance.orientation = int(orientation) % 360
-        except Exception:
-            pass
+                old_orientation = crop_instance.orientation
+                new_orientation = int(orientation) % 360
+                crop_instance.orientation = new_orientation
+                print(f"[DEBUG] update_active_crop_orientation(): 已更新 {old_orientation} -> {new_orientation}")
+            else:
+                print("[WARNING] update_active_crop_orientation(): 没有活动的crop实例")
+
+            print("[DEBUG] update_active_crop_orientation() 执行完成")
+        except Exception as e:
+            import traceback
+            error_msg = f"更新crop orientation失败: {str(e)}\n{traceback.format_exc()}"
+            print(f"[ERROR] {error_msg}")
+            self.status_message_changed.emit(error_msg)
 
     # ==== 单张裁剪：仅记录在 contactsheet，不创建正式 crop ====
     def set_contactsheet_crop(self, rect_norm: tuple[float, float, float, float]) -> None:
