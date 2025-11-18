@@ -172,15 +172,22 @@ class FilmPipelineProcessor:
         if output_colorspace_transform is not None:
             proxy_array = self._apply_colorspace_transform(proxy_array, output_colorspace_transform)
         profile['output_colorspace_ms'] = (time.time() - t4) * 1000.0
-        
+
+        # 6. Preview 8-bit truncation（模拟8bit显示的量化效果）
+        # 在Display P3转换后立即进行，确保preview看到的是8bit量化后的结果
+        t5 = time.time()
+        proxy_array = np.clip(proxy_array, 0.0, 1.0)  # 先clip到有效范围
+        proxy_array = np.round(proxy_array * 255.0) / 255.0  # 8bit量化
+        profile['preview_8bit_truncation_ms'] = (time.time() - t5) * 1000.0
+
         # 记录总时间和性能分析
         profile['total_preview_ms'] = (time.time() - t_start) * 1000.0
         profile['scale_factor'] = scale_factor
         self._last_profile = profile
-        
+
         if self._profiling_enabled:
             self._print_preview_profile(profile)
-        
+
         return image.copy_with_new_array(proxy_array)
     
     def _create_preview_proxy(self, image_array: np.ndarray) -> Tuple[np.ndarray, float]:
@@ -540,10 +547,11 @@ class FilmPipelineProcessor:
             transformed = reshaped.copy()
             transformed[:, :3] = transformed_rgb
             result = transformed.reshape(original_shape)
-        
-        # 裁剪到有效范围
-        result = np.clip(result, 0.0, 1.0)
-        
+
+        # 只clip负值，允许HDR值（>1.0）流动到显示阶段
+        # 最终的[0,1]范围clip将在显示时进行（preview_widget._array_to_pixmap）
+        result = np.maximum(result, 0.0)
+
         return result
     
     def _is_default_curve(self, points: list) -> bool:
