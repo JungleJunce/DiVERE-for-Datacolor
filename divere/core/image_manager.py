@@ -181,6 +181,30 @@ class ImageManager:
 
         arr_normalized = self._normalize_to_float32(arr, bits)
 
+        # 确定性地检测并移除 Alpha 通道（基于 TIFF 元数据）
+        # ExtraSamples tag (338) 指示额外通道的类型：
+        #   0 = unspecified
+        #   1 = associated alpha (premultiplied)
+        #   2 = unassociated alpha (straight alpha)
+        if arr_normalized.ndim == 3 and arr_normalized.shape[2] == 4:
+            extrasamples_tag = page.tags.get('ExtraSamples')
+            if extrasamples_tag is not None:
+                # ExtraSamples.value 可能是单个值或元组
+                extrasamples = extrasamples_tag.value
+                if not isinstance(extrasamples, (list, tuple)):
+                    extrasamples = (extrasamples,)
+
+                # 检查是否有 alpha 通道 (值为 1 或 2)
+                if len(extrasamples) > 0 and extrasamples[0] in (1, 2):
+                    alpha_type = "associated (premultiplied)" if extrasamples[0] == 1 else "unassociated (straight)"
+                    print(f"[ImageManager] 检测到 Alpha 通道 (ExtraSamples={extrasamples[0]}, {alpha_type})，已移除第4通道")
+                    arr_normalized = arr_normalized[:, :, :3]  # 保留前3个通道
+                else:
+                    print(f"[ImageManager] ExtraSamples={extrasamples}，第4通道不是Alpha，保持4通道")
+            else:
+                print(f"[ImageManager] ⚠️  4通道TIFF但无ExtraSamples标签，假定第4通道为Alpha并移除")
+                arr_normalized = arr_normalized[:, :, :3]
+
         return arr_normalized, bits
 
     def load_image(self, file_path: str) -> ImageData:
@@ -202,45 +226,8 @@ class ImageManager:
                 if image.ndim == 2:
                     image = image[:, :, np.newaxis]
 
-                # 处理4通道的通道顺序：优先识别Alpha；否则启发式识别红外IR通道
-                # (复用原有逻辑，因为 tifffile 不提供 bands 信息)
-                if image.ndim == 3 and image.shape[2] == 4:
-                    print(f"[ImageManager] 检测到4通道TIFF: {file_path.name}")
-                    # tifffile 不提供 bands，直接用启发式识别 IR 通道
-                    sample = image[::8, ::8, :]
-                    H, W, _ = sample.shape
-                    ch = sample.reshape(-1, 4)
-                    var_spatial = ch.var(axis=0)
-                    # 简单梯度能量（近似边缘能量）
-                    gx = np.diff(sample, axis=1, prepend=sample[:, :1, :])
-                    gy = np.diff(sample, axis=0, prepend=sample[:1, :, :])
-                    edge_energy = (gx**2 + gy**2).mean(axis=(0, 1))
-                    score = var_spatial + 0.5 * edge_energy
-                    candidate = int(np.argmin(score))
-                    # 与次小值比较，确保明显更低
-                    sorted_scores = np.sort(score)
-                    if sorted_scores[0] < 0.5 * sorted_scores[1]:
-                        # 将IR放到最后，其余通道保持原相对顺序
-                        order = [i for i in range(4) if i != candidate] + [candidate]
-                        image = image[..., order]
-                        print(f"[ImageManager] 通过启发式识别IR通道(index={candidate})，score={score.round(6).tolist()}，已重排为RGB+IR")
-                    else:
-                        print(f"[ImageManager] 启发式无法明确识别IR通道，保持原通道顺序，score={score.round(6).tolist()}")
-
-                    # 若存在Alpha通道，则在导入时直接丢弃Alpha
-                    # 启发式判断Alpha（近乎常量且接近0或1）
-                    sample2 = image[::8, ::8, :]
-                    ch2 = sample2.reshape(-1, 4)
-                    vars_ = ch2.var(axis=0)
-                    means_ = ch2.mean(axis=0)
-                    alpha_index = None
-                    for idx in range(4):
-                        if vars_[idx] < 1e-6 and (means_[idx] < 0.01 or means_[idx] > 0.99):
-                            alpha_index = idx
-                            break
-                    if alpha_index is not None and 0 <= alpha_index < 4:
-                        image = np.delete(image, alpha_index, axis=2)
-                        print(f"[ImageManager] 检测到Alpha通道(index={alpha_index})，已在导入时移除。当前shape={image.shape}")
+                # Alpha 通道已在 _load_with_tifffile() 中基于元数据确定性移除
+                # 此处不再需要启发式检测
 
                 # 检测单/双通道图像并标记
                 original_channels = image.shape[2] if image.ndim == 3 else 1
@@ -306,77 +293,22 @@ class ImageManager:
                 if image.ndim == 2:
                     image = image[:, :, np.newaxis]
 
-                # 处理4通道的通道顺序：优先识别Alpha；否则启发式识别红外IR通道（更“平滑/平均”）并移到最后
+                # 处理4通道的通道顺序：基于PIL bands元数据确定性识别Alpha
                 if image.ndim == 3 and image.shape[2] == 4:
                     print(f"[ImageManager] 检测到4通道TIFF: {file_path.name}, mode={mode}, bands={bands}")
-                    handled = False
-                    # 1) 若bands可用且包含A，按RGBA重排
-                    if bands is not None:
-                        try:
-                            band_list = list(bands)
-                            if 'A' in band_list:
-                                alpha_idx = band_list.index('A')
-                                if set(['R','G','B']).issubset(set(band_list)):
-                                    r_idx = band_list.index('R')
-                                    g_idx = band_list.index('G')
-                                    b_idx = band_list.index('B')
-                                    image = image[..., [r_idx, g_idx, b_idx, alpha_idx]]
-                                    print(f"[ImageManager] 通过bands识别Alpha通道(index={alpha_idx})，已重排为RGBA顺序")
-                                else:
-                                    # 仅将Alpha放末尾
-                                    rgb_indices = [i for i in range(4) if i != alpha_idx]
-                                    image = image[..., rgb_indices + [alpha_idx]]
-                                    print(f"[ImageManager] 通过bands识别Alpha通道(index={alpha_idx})，已将Alpha移至最后")
-                                handled = True
-                        except Exception:
-                            handled = False
-                    
-                    if not handled:
-                        # 2) 启发式识别IR通道：其方差/Laplacian方差明显更低（更平滑/平均）
-                        # 采样以提速
-                        sample = image[::8, ::8, :]
-                        H, W, _ = sample.shape
-                        ch = sample.reshape(-1, 4)
-                        var_spatial = ch.var(axis=0)
-                        # 简单梯度能量（近似边缘能量）
-                        gx = np.diff(sample, axis=1, prepend=sample[:, :1, :])
-                        gy = np.diff(sample, axis=0, prepend=sample[:1, :, :])
-                        edge_energy = (gx**2 + gy**2).mean(axis=(0, 1))
-                        score = var_spatial + 0.5 * edge_energy
-                        candidate = int(np.argmin(score))
-                        # 与次小值比较，确保明显更低
-                        sorted_scores = np.sort(score)
-                        if sorted_scores[0] < 0.5 * sorted_scores[1]:
-                            # 将IR放到最后，其余通道保持原相对顺序
-                            order = [i for i in range(4) if i != candidate] + [candidate]
-                            image = image[..., order]
-                            print(f"[ImageManager] 通过启发式识别IR通道(index={candidate})，score={score.round(6).tolist()}，已重排为RGB+IR")
-                        else:
-                            print(f"[ImageManager] 启发式无法明确识别IR通道，保持原通道顺序，score={score.round(6).tolist()}")
 
-                    # 3) 若存在Alpha通道，则在导入时直接丢弃Alpha，避免影响后续流程
-                    drop_alpha = False
-                    alpha_index = None
-                    # 明确的bands包含A
+                    # 使用PIL的bands元数据确定性识别并移除Alpha通道
                     if bands is not None and 'A' in list(bands):
-                        # 若前面按bands重排过，此时A应在末位；稳妥起见再次定位索引
-                        alpha_index = list(bands).index('A')
-                        # 若已重排至RGBA，alpha_index应为3；否则按当前位置删除
-                        drop_alpha = True
+                        band_list = list(bands)
+                        alpha_idx = band_list.index('A')
+                        # 移除Alpha通道，保留其他通道
+                        rgb_indices = [i for i in range(4) if i != alpha_idx]
+                        image = image[..., rgb_indices]
+                        print(f"[ImageManager] 检测到Alpha通道(bands index={alpha_idx})，已确定性移除。当前shape={image.shape}")
                     else:
-                        # 启发式判断Alpha（近乎常量且接近0或1）
-                        sample = image[::8, ::8, :]
-                        ch = sample.reshape(-1, 4)
-                        vars_ = ch.var(axis=0)
-                        means_ = ch.mean(axis=0)
-                        for idx in range(4):
-                            if vars_[idx] < 1e-6 and (means_[idx] < 0.01 or means_[idx] > 0.99):
-                                alpha_index = idx
-                                drop_alpha = True
-                                break
-                    if drop_alpha and alpha_index is not None and 0 <= alpha_index < 4:
-                        image = np.delete(image, alpha_index, axis=2)
-                        print(f"[ImageManager] 检测到Alpha通道(index={alpha_index})，已在导入时移除。当前shape={image.shape}")
+                        # 无bands元数据或不包含'A'，假定第4通道为Alpha并移除
+                        print(f"[ImageManager] ⚠️  4通道但bands={bands}，假定第4通道为Alpha并移除")
+                        image = image[:, :, :3]
 
                 # 检测单/双通道图像并标记
                 original_channels = image.shape[2] if image.ndim == 3 else 1
@@ -423,40 +355,10 @@ class ImageManager:
                 elif image.shape[2] == 4:
                     print(f"[ImageManager] 检测到4通道图像(BGRA→RGBA): {file_path.name}")
                     image = cv2.cvtColor(image, cv2.COLOR_BGRA2RGBA)
-                    # 对OpenCV读取的4通道图也进行IR启发式识别（若不存在明显Alpha）
-                    sample = image[::8, ::8, :].astype(np.float32) / (255.0 if image.dtype!=np.float32 and image.max()>1.0 else 1.0)
-                    ch = sample.reshape(-1, 4)
-                    var_spatial = ch.var(axis=0)
-                    gx = np.diff(sample, axis=1, prepend=sample[:, :1, :])
-                    gy = np.diff(sample, axis=0, prepend=sample[:1, :, :])
-                    edge_energy = (gx**2 + gy**2).mean(axis=(0, 1))
-                    score = var_spatial + 0.5 * edge_energy
-                    candidate = int(np.argmin(score))
-                    sorted_scores = np.sort(score)
-                    # 若第4通道近似透明掩码（极低方差且均值接近0或1），放行不改。否则按IR处理。
-                    means = ch.mean(axis=0)
-                    is_alpha_like = (var_spatial[candidate] < 1e-6) and (means[candidate] < 0.01 or means[candidate] > 0.99)
-                    if (sorted_scores[0] < 0.5 * sorted_scores[1]) and not is_alpha_like:
-                        order = [i for i in range(4) if i != candidate] + [candidate]
-                        image = image[..., order]
-                        print(f"[ImageManager] 通过启发式识别IR通道(index={candidate})，score={score.round(6).tolist()}，已重排为RGB+IR")
-                    else:
-                        print(f"[ImageManager] 4通道保持顺序，score={score.round(6).tolist()}，alpha_like={bool(is_alpha_like)}")
-
-                    # 导入时移除Alpha（若存在）
-                    # 再次采用启发式：近乎常量且接近0/1的通道视为Alpha
-                    sample2 = image[::8, ::8, :].astype(np.float32) / (255.0 if image.dtype!=np.float32 and image.max()>1.0 else 1.0)
-                    ch2 = sample2.reshape(-1, 4)
-                    vars2 = ch2.var(axis=0)
-                    means2 = ch2.mean(axis=0)
-                    alpha_idx = None
-                    for idx in range(4):
-                        if vars2[idx] < 1e-6 and (means2[idx] < 0.01 or means2[idx] > 0.99):
-                            alpha_idx = idx
-                            break
-                    if alpha_idx is not None:
-                        image = np.delete(image, alpha_idx, axis=2)
-                        print(f"[ImageManager] 检测到Alpha通道(index={alpha_idx})，已在导入时移除。当前shape={image.shape}")
+                    # OpenCV不提供元数据，假定第4通道为Alpha并移除
+                    # 注意：这无法区分RGBA和RGB+IR，若需保留IR通道请使用TIFF格式
+                    print(f"[ImageManager] ⚠️  OpenCV无元数据，假定第4通道为Alpha并移除（若为RGB+IR请使用TIFF格式）")
+                    image = image[:, :, :3]
             
             # 转换为float32并归一化到[0,1]（使用精确的元数据驱动归一化）
             original_dtype = image.dtype

@@ -173,13 +173,6 @@ class FilmPipelineProcessor:
             proxy_array = self._apply_colorspace_transform(proxy_array, output_colorspace_transform)
         profile['output_colorspace_ms'] = (time.time() - t4) * 1000.0
 
-        # 6. Preview 8-bit truncation（模拟8bit显示的量化效果）
-        # 在Display P3转换后立即进行，确保preview看到的是8bit量化后的结果
-        t5 = time.time()
-        proxy_array = np.clip(proxy_array, 0.0, 1.0)  # 先clip到有效范围
-        proxy_array = np.round(proxy_array * 255.0) / 255.0  # 8bit量化
-        profile['preview_8bit_truncation_ms'] = (time.time() - t5) * 1000.0
-
         # 记录总时间和性能分析
         profile['total_preview_ms'] = (time.time() - t_start) * 1000.0
         profile['scale_factor'] = scale_factor
@@ -527,26 +520,58 @@ class FilmPipelineProcessor:
     # 辅助方法
     # =======================
     
-    def _apply_colorspace_transform(self, image_array: np.ndarray, 
+    def _apply_colorspace_transform(self, image_array: np.ndarray,
                                    transform_matrix: np.ndarray) -> np.ndarray:
         """应用色彩空间变换"""
         if transform_matrix is None:
             return image_array
-            
-        # 多通道图像，正常处理
+
+        # 确定性地处理不同通道数的图像
         original_shape = image_array.shape
-        reshaped = image_array.reshape(-1, image_array.shape[-1])
-        if image_array.shape[-1] == 3:
+        n_channels = image_array.shape[-1] if len(image_array.shape) == 3 else 1
+        reshaped = image_array.reshape(-1, n_channels)
+
+        if n_channels == 3:
             # RGB图像，直接应用变换
             transformed = np.dot(reshaped, transform_matrix.T)
             result = transformed.reshape(original_shape)
-        else:
-            # 其他通道数，仅处理前3个通道
+        elif n_channels == 4:
+            # 4通道图像（RGBA或RGB+IR），仅对前3个RGB通道应用色彩空间变换
+            # 保留第4通道原值不变（alpha或IR通道不应受色彩变换影响）
             rgb_part = reshaped[:, :3]
             transformed_rgb = np.dot(rgb_part, transform_matrix.T)
             transformed = reshaped.copy()
             transformed[:, :3] = transformed_rgb
             result = transformed.reshape(original_shape)
+        elif n_channels == 1:
+            # TODO: 未来实现真正的单色模式处理
+            # 暂时将单通道复制为3通道进行处理
+            mono_channel = reshaped[:, 0:1]
+            rgb_expanded = np.tile(mono_channel, (1, 3))
+            transformed = np.dot(rgb_expanded, transform_matrix.T)
+            # 取平均值作为单通道结果
+            result = transformed.mean(axis=1, keepdims=True).reshape(original_shape)
+        elif n_channels > 4:
+            # 多通道图像（>4通道），仅处理前3个RGB通道
+            # 保留其他通道原值不变
+            rgb_part = reshaped[:, :3]
+            transformed_rgb = np.dot(rgb_part, transform_matrix.T)
+            transformed = reshaped.copy()
+            transformed[:, :3] = transformed_rgb
+            result = transformed.reshape(original_shape)
+        else:
+            # 2通道等其他情况（不应出现，但作为fallback）
+            # 将前N个通道扩展到3通道处理
+            if n_channels >= 2:
+                rgb_expanded = np.zeros((reshaped.shape[0], 3), dtype=reshaped.dtype)
+                rgb_expanded[:, :n_channels] = reshaped
+                transformed_rgb = np.dot(rgb_expanded, transform_matrix.T)
+                transformed = reshaped.copy()
+                transformed[:, :min(n_channels, 3)] = transformed_rgb[:, :min(n_channels, 3)]
+                result = transformed.reshape(original_shape)
+            else:
+                # 无法处理的情况，返回原数组
+                result = image_array
 
         # 只clip负值，允许HDR值（>1.0）流动到显示阶段
         # 最终的[0,1]范围clip将在显示时进行（preview_widget._array_to_pixmap）

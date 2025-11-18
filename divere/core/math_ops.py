@@ -459,27 +459,30 @@ class FilmMathOps:
                                 channel_gamma_b: float = 1.0) -> np.ndarray:
         """顺序版本的矩阵应用 + 分层反差"""
         original_shape = input_density.shape
+        n_channels = input_density.shape[-1] if len(input_density.shape) == 3 else 1
 
-        # 多通道图像，正常处理
-        reshaped = input_density.reshape(-1, input_density.shape[-1])
-        if input_density.shape[-1] == 3:
+        # 确定性地处理不同通道数的图像
+        reshaped = input_density.reshape(-1, n_channels)
+
+        if n_channels == 3:
             # RGB图像，直接应用变换
             # 1. 应用密度校正矩阵
             adjusted = pivot + np.dot(reshaped - pivot, matrix.T)
 
-            # 2. 应用分层反差（新增）
+            # 2. 应用分层反差
             if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
                 diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
                 adjusted = pivot + (adjusted - pivot) * diag
 
             result = adjusted.reshape(original_shape) - dmax
-        else:
-            # 其他通道数，仅处理前3个通道
+        elif n_channels == 4:
+            # 4通道图像（RGBA或RGB+IR），仅对前3个RGB通道应用密度矩阵变换
+            # 保留第4通道原值不变（alpha或IR通道不应受密度变换影响）
             rgb_part = reshaped[:, :3]
             # 1. 应用密度校正矩阵
             adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
 
-            # 2. 应用分层反差（新增）
+            # 2. 应用分层反差
             if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
                 diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
                 adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
@@ -487,6 +490,56 @@ class FilmMathOps:
             adjusted = reshaped.copy()
             adjusted[:, :3] = adjusted_rgb
             result = adjusted.reshape(original_shape) - dmax
+        elif n_channels == 1:
+            # TODO: 未来实现真正的单色模式处理
+            # 暂时将单通道复制为3通道进行处理
+            mono_channel = reshaped[:, 0:1]
+            rgb_expanded = np.tile(mono_channel, (1, 3))
+            # 1. 应用密度校正矩阵
+            adjusted = pivot + np.dot(rgb_expanded - pivot, matrix.T)
+
+            # 2. 应用分层反差
+            if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                adjusted = pivot + (adjusted - pivot) * diag
+
+            # 取平均值作为单通道结果
+            result = (adjusted.mean(axis=1, keepdims=True).reshape(original_shape)) - dmax
+        elif n_channels > 4:
+            # 多通道图像（>4通道），仅处理前3个RGB通道
+            # 保留其他通道原值不变
+            rgb_part = reshaped[:, :3]
+            # 1. 应用密度校正矩阵
+            adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
+
+            # 2. 应用分层反差
+            if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
+            adjusted = reshaped.copy()
+            adjusted[:, :3] = adjusted_rgb
+            result = adjusted.reshape(original_shape) - dmax
+        else:
+            # 2通道等其他情况（不应出现，但作为fallback）
+            # 将前N个通道扩展到3通道处理
+            if n_channels >= 2:
+                rgb_expanded = np.zeros((reshaped.shape[0], 3), dtype=reshaped.dtype)
+                rgb_expanded[:, :n_channels] = reshaped
+                # 1. 应用密度校正矩阵
+                adjusted_rgb = pivot + np.dot(rgb_expanded - pivot, matrix.T)
+
+                # 2. 应用分层反差
+                if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                    diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                    adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
+                adjusted = reshaped.copy()
+                adjusted[:, :min(n_channels, 3)] = adjusted_rgb[:, :min(n_channels, 3)]
+                result = adjusted.reshape(original_shape) - dmax
+            else:
+                # 无法处理的情况，返回原数组减dmax
+                result = input_density - dmax
 
         return result
     
@@ -512,26 +565,29 @@ class FilmMathOps:
             end_w = min((j + 1) * self.block_size, w)
 
             block = input_density[start_h:end_h, start_w:end_w, :]
+
+            # 确定性地处理不同通道数的图像
             if c == 3:
                 # RGB图像，直接处理
                 block_reshaped = block.reshape(-1, 3)
                 # 1. 应用密度校正矩阵
                 adjusted_block = pivot + np.dot(block_reshaped - pivot, matrix.T)
 
-                # 2. 应用分层反差（新增）
+                # 2. 应用分层反差
                 if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
                     diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
                     adjusted_block = pivot + (adjusted_block - pivot) * diag
 
                 result_block = adjusted_block.reshape(block.shape)
-            else:
-                # 其他通道数，仅处理前3个通道
-                block_reshaped = block.reshape(-1, c)
+            elif c == 4:
+                # 4通道图像（RGBA或RGB+IR），仅对前3个RGB通道应用密度矩阵变换
+                # 保留第4通道原值不变（alpha或IR通道不应受密度变换影响）
+                block_reshaped = block.reshape(-1, 4)
                 rgb_part = block_reshaped[:, :3]
                 # 1. 应用密度校正矩阵
                 adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
 
-                # 2. 应用分层反差（新增）
+                # 2. 应用分层反差
                 if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
                     diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
                     adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
@@ -539,19 +595,73 @@ class FilmMathOps:
                 adjusted_block = block_reshaped.copy()
                 adjusted_block[:, :3] = adjusted_rgb
                 result_block = adjusted_block.reshape(block.shape)
+            elif c == 1:
+                # TODO: 未来实现真正的单色模式处理
+                # 暂时将单通道复制为3通道进行处理
+                block_reshaped = block.reshape(-1, 1)
+                mono_channel = block_reshaped[:, 0:1]
+                rgb_expanded = np.tile(mono_channel, (1, 3))
+                # 1. 应用密度校正矩阵
+                adjusted = pivot + np.dot(rgb_expanded - pivot, matrix.T)
+
+                # 2. 应用分层反差
+                if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                    diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                    adjusted = pivot + (adjusted - pivot) * diag
+
+                # 取平均值作为单通道结果
+                result_mono = adjusted.mean(axis=1, keepdims=True)
+                result_block = result_mono.reshape(block.shape)
+            elif c > 4:
+                # 多通道图像（>4通道），仅处理前3个RGB通道
+                # 保留其他通道原值不变
+                block_reshaped = block.reshape(-1, c)
+                rgb_part = block_reshaped[:, :3]
+                # 1. 应用密度校正矩阵
+                adjusted_rgb = pivot + np.dot(rgb_part - pivot, matrix.T)
+
+                # 2. 应用分层反差
+                if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                    diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                    adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
+                adjusted_block = block_reshaped.copy()
+                adjusted_block[:, :3] = adjusted_rgb
+                result_block = adjusted_block.reshape(block.shape)
+            else:
+                # 2通道等其他情况（不应出现，但作为fallback）
+                # 将前N个通道扩展到3通道处理
+                if c >= 2:
+                    block_reshaped = block.reshape(-1, c)
+                    rgb_expanded = np.zeros((block_reshaped.shape[0], 3), dtype=block_reshaped.dtype)
+                    rgb_expanded[:, :c] = block_reshaped
+                    # 1. 应用密度校正矩阵
+                    adjusted_rgb = pivot + np.dot(rgb_expanded - pivot, matrix.T)
+
+                    # 2. 应用分层反差
+                    if abs(channel_gamma_r - 1.0) > 1e-6 or abs(channel_gamma_b - 1.0) > 1e-6:
+                        diag = np.array([channel_gamma_r, 1.0, channel_gamma_b])
+                        adjusted_rgb = pivot + (adjusted_rgb - pivot) * diag
+
+                    adjusted_block = block_reshaped.copy()
+                    adjusted_block[:, :min(c, 3)] = adjusted_rgb[:, :min(c, 3)]
+                    result_block = adjusted_block.reshape(block.shape)
+                else:
+                    # 无法处理的情况，返回原块
+                    result_block = block
 
             return (start_h, end_h, start_w, end_w, result_block)
-        
+
         # 并行处理所有块
         block_coords = [(i, j) for i in range(blocks_h) for j in range(blocks_w)]
-        
+
         executor = self._get_thread_pool()
         results = list(executor.map(process_block, block_coords))
-        
+
         # 重组结果
         for start_h, end_h, start_w, end_w, block_result in results:
             result[start_h:end_h, start_w:end_w, :] = block_result
-        
+
         # 减去dmax
         return result - dmax
     
