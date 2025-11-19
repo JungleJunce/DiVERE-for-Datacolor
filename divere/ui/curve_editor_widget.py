@@ -201,23 +201,23 @@ class CurveEditWidget(QWidget):
         y_offset = top_margin + (available_height - size) / 2
 
         return QRectF(x_offset, y_offset, size, size)
-    
+
     def _widget_to_curve_coords(self, widget_x: int, widget_y: int) -> Tuple[float, float]:
         """将组件坐标转换为曲线坐标(0-1)"""
         draw_rect = self._get_draw_rect()
-        
+
         curve_x = (widget_x - draw_rect.left()) / draw_rect.width()
         curve_y = 1.0 - (widget_y - draw_rect.top()) / draw_rect.height()
-        
+
         return max(0.0, min(1.0, curve_x)), max(0.0, min(1.0, curve_y))
-    
+
     def _curve_to_widget_coords(self, curve_x: float, curve_y: float) -> Tuple[int, int]:
         """将曲线坐标转换为组件坐标"""
         draw_rect = self._get_draw_rect()
-        
+
         widget_x = draw_rect.left() + curve_x * draw_rect.width()
         widget_y = draw_rect.top() + (1.0 - curve_y) * draw_rect.height()
-        
+
         return int(widget_x), int(widget_y)
     
     def _find_point_near(self, x: int, y: int) -> int:
@@ -395,19 +395,25 @@ class CurveEditWidget(QWidget):
                            int(draw_rect.right()), int(y))
         
         # 垂直网格线（对应X轴密度值）
-        # X轴从左到右：0到log10(65536)≈4.816密度，每0.3一格
-        x_density_max = np.log10(65536)  # ≈ 4.816
+        # X轴是固定宽度的滑动窗口：左边界 = dmax - 4.816，右边界 = dmax
+        x_density_range = np.log10(65536)  # ≈ 4.816，固定窗口宽度
+        x_density_min = self.dmax - x_density_range
+        x_density_max = self.dmax
         x_density_step = 0.3
-        num_x_lines = int(x_density_max / x_density_step) + 1
-        
-        for i in range(num_x_lines):
-            density = i * x_density_step
-            # 将密度映射到[0,1]范围
-            norm_x = density / x_density_max
+
+        # 找到窗口范围内的第一个和最后一个0.3倍数
+        first_grid = int(np.ceil(x_density_min / x_density_step)) * x_density_step
+        last_grid = int(np.floor(x_density_max / x_density_step)) * x_density_step
+
+        # 绘制所有在窗口内的网格线
+        density = first_grid
+        while density <= last_grid:
+            # 将密度映射到归一化坐标[0,1]
+            norm_x = (density - x_density_min) / x_density_range
             x = draw_rect.left() + norm_x * draw_rect.width()
-            if x <= draw_rect.right():
-                painter.drawLine(int(x), int(draw_rect.top()), 
-                               int(x), int(draw_rect.bottom()))
+            painter.drawLine(int(x), int(draw_rect.top()),
+                           int(x), int(draw_rect.bottom()))
+            density += x_density_step
         
         # 绘制边框
         painter.setPen(QPen(self.frame_color, 2))
@@ -480,17 +486,26 @@ class CurveEditWidget(QWidget):
             painter.drawText(x, int(y) + 4, text)
 
         # 绘制X轴标签（密度值）
-        x_density_max = np.log10(65536)  # ≈ 4.816
+        # 使用与网格线相同的滑动窗口范围
+        x_density_range = np.log10(65536)  # ≈ 4.816，固定窗口宽度
+        x_density_min = self.dmax - x_density_range
+        x_density_max = self.dmax
         x_density_step = 0.3
-        
-        for i in range(int(x_density_max / x_density_step) + 1):
-            density = i * x_density_step
-            if density <= x_density_max:
-                # 将密度映射到曲线坐标
-                x_val = density / x_density_max
-                wx, _wy = self._curve_to_widget_coords(x_val, 0)
+
+        # 找到窗口范围内的第一个和最后一个0.3倍数
+        first_label = int(np.ceil(x_density_min / x_density_step)) * x_density_step
+        last_label = int(np.floor(x_density_max / x_density_step)) * x_density_step
+
+        # 绘制所有在窗口内且非负的标签
+        density = first_label
+        while density <= last_label:
+            if density >= 0:  # 只显示非负值标签
+                # 将密度映射到归一化坐标[0,1]
+                norm_x = (density - x_density_min) / x_density_range
+                wx = draw_rect.left() + norm_x * draw_rect.width()
                 text_width = painter.fontMetrics().horizontalAdvance(f"{density:.1f}")
-                painter.drawText(wx - text_width // 2, int(draw_rect.bottom()) + 15, f"{density:.1f}")
+                painter.drawText(int(wx) - text_width // 2, int(draw_rect.bottom()) + 15, f"{density:.1f}")
+            density += x_density_step
         
         # 绘制轴标题
         font.setPointSize(10)
