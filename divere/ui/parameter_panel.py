@@ -919,14 +919,10 @@ class ParameterPanel(QWidget):
             
             # 更新UCS Diagram以反映当前色彩空间的基色
             try:
-                print(f"Debug: UCS更新 - 色彩空间: {params.input_color_space_name}")
                 cs_info = self.context.color_space_manager.get_color_space_info(params.input_color_space_name) or {}
-                print(f"Debug: UCS更新 - cs_info keys: {list(cs_info.keys())}")
                 
                 if 'primaries' in cs_info:
                     primaries = cs_info['primaries']
-                    print(f"Debug: UCS更新 - primaries: {primaries}")
-                    print(f"Debug: UCS更新 - primaries type: {type(primaries)}")
                     
                     # 转换xy坐标到uv坐标
                     coords_uv = {}
@@ -936,12 +932,11 @@ class ParameterPanel(QWidget):
                             u, v = xy_to_uv(x, y)
                             coords_uv[key] = (u, v)
                             print(f"Debug: UCS更新 - {key}: xy=({x:.4f}, {y:.4f}) -> uv=({u:.4f}, {v:.4f})")
-                    
+
                     # 更新UCS Diagram
                     if len(coords_uv) == 3:
                         print(f"Debug: UCS更新 - 更新坐标: {coords_uv}")
                         self.ucs_widget.set_uv_coordinates(coords_uv)
-                        print("Debug: UCS更新 - 更新完成")
                     else:
                         print(f"Debug: UCS更新 - 坐标不完整: {len(coords_uv)}/3")
                 else:

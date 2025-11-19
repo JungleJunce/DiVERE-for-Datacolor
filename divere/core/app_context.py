@@ -24,13 +24,15 @@ class _PreviewWorkerSignals(QObject):
 
 class _PreviewWorker(QRunnable):
     def __init__(self, image: ImageData, params: ColorGradingParams, the_enlarger: TheEnlarger,
-                 color_space_manager: ColorSpaceManager, convert_to_monochrome_in_idt: bool = False):
+                 color_space_manager: ColorSpaceManager, convert_to_monochrome_in_idt: bool = False,
+                 orientation: int = 0):
         super().__init__()
         self.image = image
         self.params = params
         self.the_enlarger = the_enlarger
         self.color_space_manager = color_space_manager
         self.convert_to_monochrome_in_idt = convert_to_monochrome_in_idt
+        self.orientation = orientation
         self.signals = _PreviewWorkerSignals()
 
     @Slot()
@@ -39,17 +41,28 @@ class _PreviewWorker(QRunnable):
         # —— 关键点：把大对象搬到局部变量，再把 self 上的引用清掉 ——
         image = self.image
         params = self.params
+        orientation = self.orientation
         self.image = None
         self.params = None
-        print(f"[DEBUG] PreviewWorker.run(): 图像尺寸={image.width}x{image.height}", flush=True)
+        print(f"[DEBUG] PreviewWorker.run(): 图像尺寸={image.width}x{image.height}, orientation={orientation}", flush=True)
 
         try:
+            # === Apply rotation if needed ===
+            if orientation % 360 != 0:
+                k = (orientation // 90) % 4
+                if k != 0:
+                    print(f"[DEBUG] PreviewWorker.run(): 应用旋转 k={k} (orientation={orientation})", flush=True)
+                    image.array = np.rot90(image.array, k=int(k))
+                    print(f"[DEBUG] PreviewWorker.run(): 旋转后图像尺寸={image.width}x{image.height}", flush=True)
+
             print("[DEBUG] PreviewWorker.run(): 准备monochrome_converter", flush=True)
             monochrome_converter = None
             if self.convert_to_monochrome_in_idt:
                 monochrome_converter = self.color_space_manager.convert_to_monochrome
                 print("[DEBUG] PreviewWorker.run(): 将使用monochrome转换", flush=True)
 
+            print(f"[DEBUG] PreviewWorker.run(): params.enable_density_curve={params.enable_density_curve}, curve_name={params.density_curve_name}", flush=True)
+            print(f"[DEBUG] PreviewWorker.run(): 曲线点数: RGB={len(params.curve_points) if params.curve_points else 0}, R={len(params.curve_points_r) if params.curve_points_r else 0}", flush=True)
             print("[DEBUG] PreviewWorker.run(): 开始apply_full_pipeline...", flush=True)
             result_image = self.the_enlarger.apply_full_pipeline(
                 image,
@@ -933,11 +946,16 @@ class ApplicationContext(QObject):
 
 
             # 清除加载标志并触发最终预览更新
+            print(f"[DEBUG] load_image(): 清除_loading_image标志，准备最终预览更新", flush=True)
+            print(f"[DEBUG] load_image(): 当前参数 enable_density_curve={self._current_params.enable_density_curve}, curve_name={self._current_params.density_curve_name}", flush=True)
+            print(f"[DEBUG] load_image(): 曲线点数: RGB={len(self._current_params.curve_points) if self._current_params.curve_points else 0}, R={len(self._current_params.curve_points_r) if self._current_params.curve_points_r else 0}", flush=True)
             self._loading_image = False
             if self._current_image:
+                print(f"[DEBUG] load_image(): 调用_prepare_proxy()...", flush=True)
                 self._prepare_proxy()
+                print(f"[DEBUG] load_image(): 调用_trigger_preview_update()...", flush=True)
                 self._trigger_preview_update()
-            
+
             # 通知UI：图像已加载完成
             self.image_loaded.emit()
 
@@ -1033,13 +1051,36 @@ class ApplicationContext(QObject):
                     new_params.enable_density_matrix = True
 
         if preset.density_curve:
-            # 只设置曲线名称，所有曲线数据已经通过 from_dict(preset.grading_params) 正确加载
-            # 原则：预设中有什么就加载什么，不做任何额外判断或按名称重新加载
+            # 设置曲线名称
             new_params.density_curve_name = preset.density_curve.name
+            print(f"[DEBUG] load_preset(): 设置密度曲线名称={preset.density_curve.name}, enable_density_curve={new_params.enable_density_curve}", flush=True)
+            print(f"[DEBUG] load_preset(): 预设中的曲线点数: RGB={len(new_params.curve_points) if new_params.curve_points else 0}, R={len(new_params.curve_points_r) if new_params.curve_points_r else 0}", flush=True)
+
+            # 如果曲线名称不是custom，且预设中没有完整的曲线数据，则从曲线文件重新加载
+            # 这是因为预设文件通常只保存曲线名称，不保存完整的曲线点数据
+            if preset.density_curve.name and preset.density_curve.name != "custom":
+                # 检查是否需要重新加载（R通道只有2个点说明没有真实数据）
+                needs_reload = (not new_params.curve_points_r or len(new_params.curve_points_r) <= 2)
+                if needs_reload:
+                    print(f"[DEBUG] load_preset(): 预设中缺少完整曲线数据，从曲线文件重新加载...", flush=True)
+                    curve_data = self._load_density_curve_points_by_name(preset.density_curve.name)
+                    if curve_data:
+                        # 加载所有通道的曲线点
+                        if 'RGB' in curve_data:
+                            new_params.curve_points = curve_data['RGB']
+                        if 'R' in curve_data:
+                            new_params.curve_points_r = curve_data['R']
+                        if 'G' in curve_data:
+                            new_params.curve_points_g = curve_data['G']
+                        if 'B' in curve_data:
+                            new_params.curve_points_b = curve_data['B']
+                        print(f"[DEBUG] load_preset(): 从曲线文件重新加载完成，曲线点数: RGB={len(new_params.curve_points)}, R={len(new_params.curve_points_r)}", flush=True)
+                    else:
+                        print(f"[WARNING] load_preset(): 无法从曲线文件加载曲线 '{preset.density_curve.name}'", flush=True)
 
             # 如果预设中包含了曲线启用标志，from_dict已经设置了
             # 这里不需要额外处理
-        
+
         # 在更新参数前先设置orientation，避免预览闪烁
         try:
             self._contactsheet_profile.orientation = preset.orientation
@@ -1244,6 +1285,8 @@ class ApplicationContext(QObject):
         
     def update_params(self, new_params: ColorGradingParams):
         """由UI调用以更新参数"""
+        print(f"[DEBUG] update_params(): enable_density_curve={new_params.enable_density_curve}, curve_name={new_params.density_curve_name}", flush=True)
+        print(f"[DEBUG] update_params(): 曲线点数: RGB={len(new_params.curve_points) if new_params.curve_points else 0}, R={len(new_params.curve_points_r) if new_params.curve_points_r else 0}", flush=True)
         self._current_params = new_params
         # 同步到当前 profile 存根
         try:
@@ -2681,7 +2724,8 @@ class ApplicationContext(QObject):
             params=params_view,
             the_enlarger=self.the_enlarger,
             color_space_manager=self.color_space_manager,
-            convert_to_monochrome_in_idt=self.should_convert_to_monochrome()
+            convert_to_monochrome_in_idt=self.should_convert_to_monochrome(),
+            orientation=self.get_current_orientation()
         )
         worker.signals.result.connect(self._on_preview_result)
         worker.signals.error.connect(self._on_preview_error)
