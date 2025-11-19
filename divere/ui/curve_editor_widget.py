@@ -23,7 +23,7 @@ class CurveEditWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(400, 300)
+        self.setMinimumSize(400, 460)  # 增加最小高度以容纳正方形绘图区域
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         # 曲线控制点 [(x, y), ...]
@@ -182,16 +182,25 @@ class CurveEditWidget(QWidget):
                 self.curve_changed.emit(self.control_points)
     
     def _get_draw_rect(self) -> QRectF:
-        """获取绘制区域的矩形（考虑边距）"""
+        """获取绘制区域的矩形（考虑边距，保持1:1长宽比）"""
         rect = self.rect()
         left_margin = 40
         top_margin = 20
         right_margin = 20
-        bottom_margin = 50
-        
-        return QRectF(left_margin, top_margin, 
-                     rect.width() - left_margin - right_margin, 
-                     rect.height() - top_margin - bottom_margin)
+        bottom_margin = 40  # 减小底部边距以节省空间
+
+        # 计算可用空间
+        available_width = rect.width() - left_margin - right_margin
+        available_height = rect.height() - top_margin - bottom_margin
+
+        # 取较小值作为正方形边长，保持1:1长宽比
+        size = available_width
+
+        # 居中对齐
+        x_offset = left_margin + (available_width - size) / 2
+        y_offset = top_margin + (available_height - size) / 2
+
+        return QRectF(x_offset, y_offset, size, size)
     
     def _widget_to_curve_coords(self, widget_x: int, widget_y: int) -> Tuple[float, float]:
         """将组件坐标转换为曲线坐标(0-1)"""
@@ -464,7 +473,11 @@ class CurveEditWidget(QWidget):
             # 将密度映射到归一化坐标[0,1]，其中0对应顶部，1对应底部
             norm_y = (y_density_max - density) / y_density_range
             y = draw_rect.top() + norm_y * draw_rect.height()
-            painter.drawText(20, int(y) + 4, f"{int(density)}")
+            # 右对齐y轴标签
+            text = f"{int(density)}"
+            text_width = painter.fontMetrics().horizontalAdvance(text)
+            x = int(draw_rect.left()) - text_width - 5  # 右对齐到绘图区域左边界，留5像素间距
+            painter.drawText(x, int(y) + 4, text)
 
         # 绘制X轴标签（密度值）
         x_density_max = np.log10(65536)  # ≈ 4.816
