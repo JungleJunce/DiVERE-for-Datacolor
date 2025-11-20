@@ -494,11 +494,14 @@ class ImageManager:
             new_w = int(w * scale)
             new_h = int(h * scale)
 
+            # 检查是不是C_contiguous，可以尽可能优化
+            if not source_array.flags['C_CONTIGUOUS']:
+                source_array = np.ascontiguousarray(source_array)
             # 使用OpenCV进行高质量缩放
             proxy_array = cv2.resize(
                 source_array, 
                 (new_w, new_h), 
-                interpolation=cv2.INTER_LINEAR
+                interpolation = cv2.INTER_NEAREST #INTER_LINEAR  # INTER_AREA
             )
         # 落到float16
         proxy_array = proxy_array.astype(np.float16, copy=False)
