@@ -167,6 +167,7 @@ class ApplicationContext(QObject):
             # 进程模式相关字段
             self._preview_worker_process = None  # PreviewWorkerProcess 实例
             self._proxy_shared_memory = None  # shared_memory.SharedMemory 实例
+            self._proxy_needs_reload = False  # Proxy 是否需要重载到 worker（优化标志）
             self._result_poll_timer = QTimer()
             self._result_poll_timer.timeout.connect(self._poll_preview_result)
 
@@ -433,9 +434,7 @@ class ApplicationContext(QObject):
             return
         self._crop_focused = True
         self._prepare_proxy()
-        # 模式切换后需要重建worker（proxy已变化）
-        if self._use_process_isolation and self._preview_worker_process is not None:
-            self._shutdown_preview_worker_process()
+        # 模式切换后，worker 会在预览时自动 reload proxy（热重载）
         self._trigger_preview_update()
         self._autosave_timer.start()
 
@@ -444,9 +443,7 @@ class ApplicationContext(QObject):
             return
         self._crop_focused = False
         self._prepare_proxy()
-        # 模式切换后需要重建worker（proxy已变化）
-        if self._use_process_isolation and self._preview_worker_process is not None:
-            self._shutdown_preview_worker_process()
+        # 模式切换后，worker 会在预览时自动 reload proxy（热重载）
         self._trigger_preview_update()
         self._autosave_timer.start()
 
@@ -461,9 +458,7 @@ class ApplicationContext(QObject):
                 return
             self._crop_focused = True
             self._prepare_proxy()
-            # 模式切换后需要重建worker（proxy已变化）
-            if self._use_process_isolation and self._preview_worker_process is not None:
-                self._shutdown_preview_worker_process()
+            # 模式切换后，worker 会在预览时自动 reload proxy（热重载）
             self._trigger_preview_update()
             self._autosave_timer.start()
         except Exception:
@@ -534,9 +529,7 @@ class ApplicationContext(QObject):
             # 一次性刷新
             self.params_changed.emit(self._current_params)
             self._prepare_proxy()
-            # 模式切换后需要重建worker（proxy已变化）
-            if self._use_process_isolation and self._preview_worker_process is not None:
-                self._shutdown_preview_worker_process()
+            # 模式切换后，worker 会在预览时自动 reload proxy（热重载）
             self._trigger_preview_update()
             self._autosave_timer.start()
         except Exception:
@@ -634,9 +627,7 @@ class ApplicationContext(QObject):
                 # 如果当前处于聚焦状态，需要重新准备proxy
                 if self._crop_focused:
                     self._prepare_proxy()
-                    # Crop rect调整后需要重建worker（proxy已变化）
-                    if self._use_process_isolation and self._preview_worker_process is not None:
-                        self._shutdown_preview_worker_process()
+                    # Crop rect调整后，worker 会在预览时自动 reload proxy（热重载）
                     self._trigger_preview_update()
                 self._autosave_timer.start()
         except Exception as e:
@@ -853,7 +844,7 @@ class ApplicationContext(QObject):
                 total_mb = 0
             print(f"[MEM] total_estimated_mb={total_mb:.1f}MB，执行 _clear_all_caches()")
             self._clear_all_caches()
-            if total_mb > 4000:  # 阈值你自己定，比如 4GB
+            if total_mb > 2000:  # 阈值你自己定，比如 2GB
                 print(f"[MEM] total_estimated_mb={total_mb:.1f}MB，执行 _clear_all_caches()")
                 self._clear_all_caches()
             else:
@@ -880,10 +871,14 @@ class ApplicationContext(QObject):
             self._reference_colorspace = None
             self._reference_filename = None
 
-            # ============ 进程隔离：销毁旧 worker 进程 ============
+            # ============ 进程隔离：智能管理 worker 进程 ============
             if self._use_process_isolation:
-                self._shutdown_preview_worker_process()
-            # ===================================================
+                # 检查是否需要重启 worker（内存监控）
+                if self._should_restart_worker():
+                    print("[WORKER] Restarting worker process due to memory threshold or death")
+                    self._shutdown_preview_worker_process()
+                # 否则 worker 会在预览时自动 reload proxy（热重载）
+            # =========================================================
 
             self._current_image = self.image_manager.load_image(file_path)
             
@@ -1089,6 +1084,7 @@ class ApplicationContext(QObject):
         
         # 确保在更新参数前先准备好proxy，避免使用旧proxy导致预览暗淡
         if self._current_image:
+            print("[DEBUG: load_preset]")
             self._prepare_proxy()
 
         self.update_params(new_params)
@@ -1304,7 +1300,7 @@ class ApplicationContext(QObject):
         self._current_params.input_color_space_name = space_name
         self.params_changed.emit(self._current_params)
         if self._current_image:
-            self._prepare_proxy()
+            #self._prepare_proxy()
             self._trigger_preview_update()
     
     def set_current_film_type(self, film_type: str, apply_defaults: bool = True, 
@@ -1902,6 +1898,12 @@ class ApplicationContext(QObject):
             print("[DEBUG] _prepare_proxy(): 释放旧proxy", flush=True)
             del self._current_proxy
         self._current_proxy = proxy
+
+        # 标记 proxy 需要重载到 worker（进程模式专用）
+        if self._use_process_isolation:
+            self._proxy_needs_reload = True
+            print("[DEBUG] _prepare_proxy(): 标记 proxy 需要重载", flush=True)
+
         print("[DEBUG] _prepare_proxy() 执行完成，proxy已更新", flush=True)
 
     def get_current_idt_gamma(self) -> float:
@@ -2539,6 +2541,46 @@ class ApplicationContext(QObject):
     # 参考文档：PROCESS_ISOLATION_ANALYSIS.md
     # =================
 
+    def _should_restart_worker(self) -> bool:
+        """判断是否需要重启 worker 进程（内存监控）
+
+        Returns:
+            bool: True 表示需要重启，False 表示可以复用
+        """
+        if not hasattr(self, '_preview_worker_process') or self._preview_worker_process is None:
+            print("[WORKER] No worker process, no need to restart")
+            return False  # 还没创建，不需要重启
+
+        if not self._preview_worker_process.is_alive():
+            print("[WORKER] Worker process is dead, need to restart")
+            return True  # 进程已死，需要重启
+
+        # 检查内存使用量（从配置文件读取阈值）
+        try:
+            # 获取 PID 用于调试
+            worker_pid = self._preview_worker_process.process.pid if self._preview_worker_process.process else None
+
+            # 从配置文件读取内存阈值（默认 4GB）
+            from divere.utils.enhanced_config_manager import enhanced_config_manager
+            threshold_mb = enhanced_config_manager.get_ui_setting("worker_memory_threshold_mb", 4000)
+
+            mem_mb = self._preview_worker_process.get_memory_usage()
+            if mem_mb is not None:
+                print(f"[WORKER] PID {worker_pid} memory usage: {mem_mb:.1f} MB (threshold: {threshold_mb} MB)")
+                if mem_mb > threshold_mb:
+                    print(f"[WORKER] ⚠️  Memory threshold exceeded ({mem_mb:.1f} MB > {threshold_mb} MB), will restart")
+                    return True
+                else:
+                    print(f"[WORKER] ✓ Memory OK, will reuse worker")
+            else:
+                print(f"[WORKER] ⚠️  Failed to get memory usage for PID {worker_pid} (psutil not available?), will reuse worker")
+        except Exception as e:
+            print(f"[WORKER] ⚠️  Exception getting memory usage: {e}, will reuse worker")
+            import traceback
+            traceback.print_exc()
+
+        return False  # 内存正常，可以复用
+
     def _shutdown_preview_worker_process(self):
         """销毁 worker 进程并清理 shared memory（幂等操作）"""
         if not hasattr(self, '_preview_worker_process'):
@@ -2605,7 +2647,9 @@ class ApplicationContext(QObject):
             if not self._preview_worker_process.is_alive():
                 raise RuntimeError("Worker process failed to start")
 
+            # 5. 保存 shared memory 引用并重置标志
             self._proxy_shared_memory = shm
+            self._proxy_needs_reload = False  # Worker 已加载 proxy
 
         except Exception as e:
             import logging
@@ -2633,13 +2677,79 @@ class ApplicationContext(QObject):
             # 使用线程模式重新触发预览
             self._trigger_preview_with_thread()
 
+    def _reload_worker_proxy(self):
+        """重新加载 worker 的 proxy（不重启进程，热重载）
+
+        用于切换图片时复用 worker 进程，避免重新 import 模块的开销
+        """
+        if not self._current_proxy:
+            return
+
+        if not hasattr(self, '_preview_worker_process') or self._preview_worker_process is None:
+            return
+
+        try:
+            from multiprocessing import shared_memory
+
+            proxy = self._current_proxy
+
+            # 1. 清理旧的 shared memory
+            if self._proxy_shared_memory is not None:
+                try:
+                    self._proxy_shared_memory.close()
+                    self._proxy_shared_memory.unlink()
+                except Exception as e:
+                    import logging
+                    logger = logging.getLogger(__name__)
+                    logger.warning(f"Failed to cleanup old shared memory: {e}")
+
+            # 2. 创建新的 shared memory 并写入新 proxy
+            shm = shared_memory.SharedMemory(create=True, size=proxy.array.nbytes)
+            shm_array = np.ndarray(proxy.array.shape, dtype=proxy.array.dtype,
+                                   buffer=shm.buf)
+            np.copyto(shm_array, proxy.array)
+
+            # 3. 通知 worker 重新加载 proxy
+            self._preview_worker_process.reload_proxy(
+                proxy_shm_name=shm.name,
+                proxy_shape=proxy.array.shape,
+                proxy_dtype=str(proxy.array.dtype)
+            )
+
+            # 4. 更新 shared memory 引用
+            self._proxy_shared_memory = shm
+
+            # 5. 重置标志：proxy 已成功重载
+            self._proxy_needs_reload = False
+
+            print(f"[WORKER] Reloaded proxy via hot-reload (shape={proxy.array.shape})")
+
+        except Exception as e:
+            import logging
+            logger = logging.getLogger(__name__)
+            logger.error(f"Failed to reload worker proxy: {e}")
+            # 重载失败，回退到重启 worker
+            self._shutdown_preview_worker_process()
+
     def _trigger_preview_with_process(self):
         """使用进程模式触发预览"""
         if not self._current_proxy:
             return
 
-        # Lazy 创建 worker 进程
+        # Lazy 创建或热重载 worker 进程
         if self._preview_worker_process is None:
+            # 首次创建 worker 进程
+            self._create_preview_worker_process()
+        elif self._preview_worker_process.is_alive():
+            # Worker 存活，检查是否需要重载 proxy
+            if self._proxy_needs_reload:
+                print("[DEBUG] _trigger_preview_with_process(): proxy 已改变，重载 proxy", flush=True)
+                self._reload_worker_proxy()
+            else:
+                print("[DEBUG] _trigger_preview_with_process(): proxy 未改变，跳过重载", flush=True)
+        else:
+            # Worker 已死，需要重新创建
+            self._shutdown_preview_worker_process()
             self._create_preview_worker_process()
 
         # 如果创建失败（已回退到线程模式），直接返回

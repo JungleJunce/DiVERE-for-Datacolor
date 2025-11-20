@@ -91,7 +91,7 @@ jobs:
         import importlib, sys
         required = [
           'PySide6', 'numpy', 'cv2', 'PIL', 'scipy', 'imageio', 'colour', 'onnxruntime', 'pyopencl',
-          'tifffile', 'imagecodecs', 'cma'
+          'tifffile', 'imagecodecs', 'cma', 'psutil'
         ]
         missing = []
         for m in required:

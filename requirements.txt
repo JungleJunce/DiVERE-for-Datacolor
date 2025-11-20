@@ -11,6 +11,7 @@ imageio>=2.31.0          # Image format support
 colour-science>=0.4.2    # Color science calculations
 onnxruntime>=1.15.0      # ONNX inference (AI auto color correction)
 pyopencl>=2024.1         # GPU acceleration
+psutil>=5.9.0            # Process and system monitoring (worker memory tracking)
 
 # TIFF format support (ICC profile embedding)
 tifffile>=2024.2.12      # Advanced TIFF processing

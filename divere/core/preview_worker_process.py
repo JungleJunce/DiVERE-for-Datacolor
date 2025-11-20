@@ -29,6 +29,32 @@ import logging
 logger = logging.getLogger(__name__)
 
 
+def _load_proxy_from_shm(shm_name: str, shape: tuple, dtype: str):
+    """从 shared memory 加载 proxy 图像
+
+    Args:
+        shm_name: shared memory 名称
+        shape: 数组形状
+        dtype: 数据类型
+
+    Returns:
+        ImageData: proxy 图像
+    """
+    from divere.core.data_types import ImageData
+
+    shm = shared_memory.SharedMemory(name=shm_name)
+    proxy_array = np.ndarray(shape, dtype=dtype, buffer=shm.buf)
+
+    # 拷贝到 worker 进程内存（避免依赖主进程的 shm）
+    proxy_image = ImageData(
+        array=proxy_array.copy(),
+        metadata={},
+    )
+
+    shm.close()  # 不 unlink，主进程负责清理
+    return proxy_image
+
+
 def _worker_main_loop(
     queue_request: Queue,
     queue_result: Queue,
@@ -61,16 +87,7 @@ def _worker_main_loop(
         color_space_manager = ColorSpaceManager()
 
         # ============ Step 2: 加载 proxy 从 shared memory ============
-        shm = shared_memory.SharedMemory(name=proxy_shm_name)
-        proxy_array = np.ndarray(proxy_shape, dtype=proxy_dtype, buffer=shm.buf)
-
-        # 拷贝到 worker 进程内存（避免依赖主进程的 shm）
-        proxy_image = ImageData(
-            array=proxy_array.copy(),
-            metadata={},
-        )
-
-        shm.close()  # 不 unlink，主进程负责清理
+        proxy_image = _load_proxy_from_shm(proxy_shm_name, proxy_shape, proxy_dtype)
 
         # ============ Step 3: 主循环：处理预览请求 ============
         while True:
@@ -83,7 +100,57 @@ def _worker_main_loop(
 
             # 3.3 解析请求
             action = request.get('action')
+
+            # === 处理 reload_proxy 请求 ===
+            if action == 'reload_proxy':
+                try:
+                    new_shm_name = request['proxy_shm_name']
+                    new_shape = request['proxy_shape']
+                    new_dtype = request['proxy_dtype']
+
+                    # 释放旧 proxy 内存
+                    if proxy_image is not None and hasattr(proxy_image, 'array'):
+                        proxy_image.array = None
+
+                    # 重新加载 proxy
+                    proxy_image = _load_proxy_from_shm(new_shm_name, new_shape, new_dtype)
+
+                    queue_result.put({'status': 'proxy_reloaded'})
+                except Exception as e:
+                    queue_result.put({
+                        'status': 'error',
+                        'message': f"Failed to reload proxy: {e}",
+                        'traceback': traceback.format_exc()
+                    })
+                continue
+
+            # === 处理 get_memory 请求 ===
+            if action == 'get_memory':
+                try:
+                    import psutil
+                    import os
+                    process = psutil.Process(os.getpid())
+                    mem_info = process.memory_info()
+                    queue_result.put({
+                        'status': 'memory_info',
+                        'rss_mb': mem_info.rss / 1024 / 1024,
+                        'vms_mb': mem_info.vms / 1024 / 1024
+                    })
+                except ImportError:
+                    queue_result.put({
+                        'status': 'error',
+                        'message': 'psutil not available'
+                    })
+                except Exception as e:
+                    queue_result.put({
+                        'status': 'error',
+                        'message': f"Failed to get memory: {e}"
+                    })
+                continue
+
+            # === 处理 preview 请求 ===
             if action != 'preview':
+                # 未知 action，忽略
                 continue
 
             params = ColorGradingParams.from_dict(request['params'])
@@ -292,6 +359,109 @@ class PreviewWorkerProcess:
         """检查 worker 进程是否存活"""
         return self.process is not None and self.process.is_alive()
 
+    def reload_proxy(self, proxy_shm_name: str, proxy_shape: tuple, proxy_dtype: str):
+        """重新加载 proxy（不重启进程）
+
+        用于切换图片时复用 worker 进程，避免重新 import 模块的开销
+
+        Args:
+            proxy_shm_name: 新 proxy 的 shared memory 名称
+            proxy_shape: 新 proxy 数组形状
+            proxy_dtype: 新 proxy 数据类型
+        """
+        if not self.is_alive():
+            logger.warning("Worker process not alive, cannot reload proxy")
+            return
+
+        # 更新 proxy 元数据
+        self.proxy_shm_name = proxy_shm_name
+        self.proxy_shape = proxy_shape
+        self.proxy_dtype = proxy_dtype
+
+        # 发送 reload_proxy 请求
+        request_dict = {
+            'action': 'reload_proxy',
+            'proxy_shm_name': proxy_shm_name,
+            'proxy_shape': proxy_shape,
+            'proxy_dtype': proxy_dtype,
+        }
+
+        try:
+            self.queue_request.put(request_dict, timeout=1.0)
+        except queue.Full:
+            logger.warning("Request queue full, cannot reload proxy")
+
+    def get_memory_usage(self) -> Optional[float]:
+        """获取 worker 进程内存使用量（MB）
+
+        macOS 上 psutil 的 RSS 严重低估内存（因为内存压缩），
+        改用 `ps` 命令直接读取物理内存占用。
+
+        Returns:
+            float: 内存使用量（单位 MB），如果获取失败返回 None
+        """
+        if not self.is_alive():
+            logger.debug("Worker not alive, cannot get memory usage")
+            return None
+
+        try:
+            import platform
+            import subprocess
+
+            if self.process is None:
+                logger.debug("Worker process object is None")
+                return None
+
+            pid = self.process.pid
+
+            # macOS: 使用 ps 命令读取真实物理内存
+            # RSS 字段在 macOS 上低估内存，需要直接解析 ps 输出
+            if platform.system() == 'Darwin':
+                try:
+                    # 使用 ps 命令获取进程内存（KB）
+                    # -o rss= 返回实际物理内存（虽然还是可能低估，但比 psutil 准确）
+                    result = subprocess.run(
+                        ['ps', '-p', str(pid), '-o', 'rss='],
+                        capture_output=True,
+                        text=True,
+                        timeout=1.0
+                    )
+
+                    if result.returncode == 0:
+                        rss_kb = int(result.stdout.strip())
+                        mem_mb = rss_kb / 1024
+
+                        #
+                        return mem_mb
+                    else:
+                        logger.debug(f"ps command failed: {result.stderr}")
+                        return None
+
+                except (subprocess.TimeoutExpired, subprocess.CalledProcessError, ValueError) as e:
+                    logger.debug(f"Failed to run ps command: {e}")
+                    # 降级到 psutil
+                    pass
+
+            # Linux/Windows 或 macOS fallback：使用 psutil
+            try:
+                import psutil
+                proc = psutil.Process(pid)
+                mem_info = proc.memory_info()
+                mem_mb = mem_info.rss / 1024 / 1024
+                logger.debug(f"Worker PID {pid} memory (psutil): {mem_mb:.1f} MB")
+                return mem_mb
+            except ImportError:
+                print(f"[WORKER] ⚠️  psutil not installed, cannot monitor memory. Install with: pip install psutil")
+                return None
+
+        except Exception as e:
+            # 其他异常也输出，方便调试
+            print(f"[WORKER] ⚠️  Failed to get memory usage: {e}")
+            logger.debug(f"Failed to get memory usage: {e}")
+            import traceback
+            traceback.print_exc()
+            return None
+
     def request_preview(self, params,
                         crop_rect_norm=None,
                         orientation: int = 0,
@@ -413,8 +583,19 @@ class PreviewWorkerProcess:
         except queue.Empty:
             return None
 
+        # 处理错误消息
         if result_info['status'] == 'error':
             return Exception(result_info['message'])
+
+        # 过滤内部消息（不是预览结果）
+        if result_info['status'] in ('proxy_reloaded', 'memory_info'):
+            # 内部状态消息，忽略并继续等待预览结果
+            return None
+
+        # 预览结果必须包含 'shm_name'
+        if result_info['status'] != 'success':
+            logger.warning(f"Unexpected result status: {result_info['status']}")
+            return None
 
         # 从 shared memory 读取结果
         shm_name = result_info['shm_name']

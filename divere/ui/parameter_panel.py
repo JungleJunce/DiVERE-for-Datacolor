@@ -1626,7 +1626,8 @@ class ParameterPanel(QWidget):
                 self._mark_as_modified(self.input_colorspace_combo)
             
             # 触发Context按当前色彩空间重建proxy（内部会skip逆伽马，并应用前置幂次）
-            self.context._prepare_proxy(); self.context._trigger_preview_update()
+            self.context._prepare_proxy()
+            self.context._trigger_preview_update()
         except Exception:
             pass
     
