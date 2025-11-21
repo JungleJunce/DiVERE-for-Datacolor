@@ -64,20 +64,21 @@ def main():
     # 必须在创建任何 Process 之前调用，macOS/Linux 会自动忽略
     multiprocessing.freeze_support()
 
-    # 配置 multiprocessing 启动方法（加速进程创建）
-    # macOS/Linux 使用 forkserver（比 spawn 快，比 fork 安全）
-    # Windows 只支持 spawn，自动降级
-    if platform.system() in ['Darwin', 'Linux']:
-        try:
-            multiprocessing.set_start_method('forkserver', force=True)
-            if '--debug' in sys.argv or '-v' in sys.argv:
-                print("[DiVERE] Using forkserver for multiprocessing (faster process creation)")
-        except RuntimeError as e:
-            print(f"[DiVERE] Warning: Failed to set forkserver start method: {e}")
-            print("[DiVERE] Falling back to default start method")
-    else:
-        if '--debug' in sys.argv or '-v' in sys.argv:
-            print(f"[DiVERE] Using default spawn method on {platform.system()}")
+    # # 配置 multiprocessing 启动方法（加速进程创建）
+    # # macOS/Linux 使用 forkserver（比 spawn 快，比 fork 安全）
+    # # Windows 只支持 spawn，自动降级
+    # if platform.system() in ['Darwin', 'Linux']:
+    #     try:
+    #         multiprocessing.set_start_method('forkserver', force=True)
+    #         if '--debug' in sys.argv or '-v' in sys.argv:
+    #             print("[DiVERE] Using forkserver for multiprocessing (faster process creation)")
+    #     except RuntimeError as e:
+    #         print(f"[DiVERE] Warning: Failed to set forkserver start method: {e}")
+    #         print("[DiVERE] Falling back to default start method")
+    # else:
+    #     if '--debug' in sys.argv or '-v' in sys.argv:
+    #         print(f"[DiVERE] Using default spawn method on {platform.system()}")
+    # 2025.11.21：因为metal不支持fork，所以关闭这一特性。
 
     # 创建Qt应用
     app = QApplication(sys.argv)
