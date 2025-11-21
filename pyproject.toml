@@ -33,6 +33,7 @@ dependencies = [
     "tifffile>=2024.2.12",
     "imagecodecs>=2024.1.1",
     "cma>=3.3.0",
+    "psutil>=5.9.0"
 ]
 
 [project.urls]
