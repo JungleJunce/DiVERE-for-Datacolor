@@ -1983,6 +1983,14 @@ class ApplicationContext(QObject):
 
 
     def _on_preview_error(self, message: str):
+        # 如果是 proxy 重载失败，直接把进程干掉，避免后面用坏掉的 proxy 再跑一次
+        if "Failed to reload proxy" in message:
+            print("[DEBUG] _on_preview_error(): 检测到 proxy 重载失败，重启 worker 进程", flush=True)
+            try:
+                self._shutdown_preview_worker_process()
+            except Exception as e:
+                print(f"[DEBUG] _on_preview_error(): shutdown worker 失败: {e}", flush=True)
+
         # 在色卡优化期间不发送预览错误消息，避免覆盖优化状态
         if not self._ccm_optimization_active:
             self.status_message_changed.emit(f"预览更新失败: {message}")
