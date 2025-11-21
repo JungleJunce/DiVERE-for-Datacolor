@@ -78,6 +78,8 @@ def main():
     # else:
     #     if '--debug' in sys.argv or '-v' in sys.argv:
     #         print(f"[DiVERE] Using default spawn method on {platform.system()}")
+    if multiprocessing.get_start_method(allow_none=True) != "spawn":
+        multiprocessing.set_start_method("spawn", force=True)
     # 2025.11.21：因为metal不支持fork，所以关闭这一特性。
 
     # 创建Qt应用
