@@ -1,0 +1,145 @@
+<x:xmpmeta xmlns:x="adobe:ns:meta/" x:xmptk="Adobe XMP Core 7.0-c000 1.000000, 0000/00/00-00:00:00        ">
+ <rdf:RDF xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+  <rdf:Description rdf:about=""
+    xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
+   crs:PresetType="Normal"
+   crs:Cluster=""
+   crs:UUID="892A281D63F4485195E214998FBE73AC"
+   crs:SupportsAmount2="True"
+   crs:SupportsAmount="True"
+   crs:SupportsColor="True"
+   crs:SupportsMonochrome="True"
+   crs:SupportsHighDynamicRange="True"
+   crs:SupportsNormalDynamicRange="True"
+   crs:SupportsSceneReferred="True"
+   crs:SupportsOutputReferred="True"
+   crs:RequiresRGBTables="False"
+   crs:CameraModelRestriction=""
+   crs:Copyright=""
+   crs:ContactInfo=""
+   crs:Version="17.2"
+   crs:ProcessVersion="15.4"
+   crs:ParametricShadows="0"
+   crs:ParametricDarks="0"
+   crs:ParametricLights="0"
+   crs:ParametricHighlights="0"
+   crs:ParametricShadowSplit="25"
+   crs:ParametricMidtoneSplit="50"
+   crs:ParametricHighlightSplit="75"
+   crs:ToneCurveName2012="Custom"
+   crs:HDREditMode="1"
+   crs:HDRMaxValue="+4.00"
+   crs:SDRBrightness="0"
+   crs:SDRContrast="0"
+   crs:SDRClarity="0"
+   crs:SDRHighlights="0"
+   crs:SDRShadows="0"
+   crs:SDRWhites="0"
+   crs:SDRBlend="0"
+   crs:HasSettings="True">
+   <crs:Name>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">DiVERE Kodak Ektacolor Endura HDR</rdf:li>
+    </rdf:Alt>
+   </crs:Name>
+   <crs:ShortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:ShortName>
+   <crs:SortName>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:SortName>
+   <crs:Group>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default">DiVERE Density Curves</rdf:li>
+    </rdf:Alt>
+   </crs:Group>
+   <crs:Description>
+    <rdf:Alt>
+     <rdf:li xml:lang="x-default"/>
+    </rdf:Alt>
+   </crs:Description>
+    <crs:ToneCurvePV2012>
+     <rdf:Seq>
+      <rdf:li>0, 0</rdf:li>
+      <rdf:li>255, 255</rdf:li>
+     </rdf:Seq>
+    </crs:ToneCurvePV2012>
+    <crs:ToneCurvePV2012Red>
+     <rdf:Seq>
+      <rdf:li>0, 30</rdf:li>
+      <rdf:li>13, 30</rdf:li>
+      <rdf:li>27, 35</rdf:li>
+      <rdf:li>40, 59</rdf:li>
+      <rdf:li>54, 147</rdf:li>
+      <rdf:li>67, 264</rdf:li>
+      <rdf:li>81, 341</rdf:li>
+      <rdf:li>94, 378</rdf:li>
+      <rdf:li>107, 391</rdf:li>
+      <rdf:li>121, 395</rdf:li>
+      <rdf:li>134, 397</rdf:li>
+      <rdf:li>148, 399</rdf:li>
+      <rdf:li>161, 400</rdf:li>
+      <rdf:li>174, 400</rdf:li>
+      <rdf:li>188, 400</rdf:li>
+      <rdf:li>201, 400</rdf:li>
+      <rdf:li>215, 400</rdf:li>
+      <rdf:li>228, 400</rdf:li>
+      <rdf:li>242, 400</rdf:li>
+      <rdf:li>255, 400</rdf:li>
+     </rdf:Seq>
+    </crs:ToneCurvePV2012Red>
+    <crs:ToneCurvePV2012Green>
+     <rdf:Seq>
+      <rdf:li>0, 28</rdf:li>
+      <rdf:li>13, 28</rdf:li>
+      <rdf:li>27, 31</rdf:li>
+      <rdf:li>40, 52</rdf:li>
+      <rdf:li>54, 135</rdf:li>
+      <rdf:li>67, 265</rdf:li>
+      <rdf:li>81, 343</rdf:li>
+      <rdf:li>94, 379</rdf:li>
+      <rdf:li>107, 391</rdf:li>
+      <rdf:li>121, 395</rdf:li>
+      <rdf:li>134, 397</rdf:li>
+      <rdf:li>148, 399</rdf:li>
+      <rdf:li>161, 400</rdf:li>
+      <rdf:li>174, 400</rdf:li>
+      <rdf:li>188, 400</rdf:li>
+      <rdf:li>201, 400</rdf:li>
+      <rdf:li>215, 400</rdf:li>
+      <rdf:li>228, 400</rdf:li>
+      <rdf:li>242, 400</rdf:li>
+      <rdf:li>255, 400</rdf:li>
+     </rdf:Seq>
+    </crs:ToneCurvePV2012Green>
+    <crs:ToneCurvePV2012Blue>
+     <rdf:Seq>
+      <rdf:li>0, 35</rdf:li>
+      <rdf:li>13, 35</rdf:li>
+      <rdf:li>27, 37</rdf:li>
+      <rdf:li>40, 55</rdf:li>
+      <rdf:li>54, 136</rdf:li>
+      <rdf:li>67, 264</rdf:li>
+      <rdf:li>81, 343</rdf:li>
+      <rdf:li>94, 379</rdf:li>
+      <rdf:li>107, 391</rdf:li>
+      <rdf:li>121, 395</rdf:li>
+      <rdf:li>134, 397</rdf:li>
+      <rdf:li>148, 399</rdf:li>
+      <rdf:li>161, 400</rdf:li>
+      <rdf:li>174, 400</rdf:li>
+      <rdf:li>188, 400</rdf:li>
+      <rdf:li>201, 400</rdf:li>
+      <rdf:li>215, 400</rdf:li>
+      <rdf:li>228, 400</rdf:li>
+      <rdf:li>242, 400</rdf:li>
+      <rdf:li>255, 400</rdf:li>
+     </rdf:Seq>
+    </crs:ToneCurvePV2012Blue>
+  </rdf:Description>
+ </rdf:RDF>
+</x:xmpmeta>
