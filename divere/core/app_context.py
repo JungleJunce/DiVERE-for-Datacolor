@@ -2378,9 +2378,13 @@ class ApplicationContext(QObject):
             # 原因：backup可能包含_loading_image=True，恢复后会阻止所有预览更新
             self._loading_image = False
 
-            if self._use_process_isolation:
-                # 进程模式：标记proxy需要重载到worker
-                self._proxy_needs_reload = True
+            # 重新生成proxy，确保与恢复的状态匹配
+            # 修复：批量导出后proxy对象不匹配导致preview锁定的bug
+            # 原因：backup的proxy对象引用指向旧图像，与恢复的_current_image等状态不匹配
+            # _prepare_proxy() 会根据恢复的状态（_crop_focused、_active_crop_id等）生成正确的proxy
+            # 并自动设置_proxy_needs_reload=True（进程模式下）
+            print("[DEBUG] Call for _prepare_proxy: restore_state()")
+            self._prepare_proxy()
 
             # 发送参数变更信号，更新UI参数面板
             if self._current_params:

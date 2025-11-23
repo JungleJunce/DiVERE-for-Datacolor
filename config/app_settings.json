@@ -21,7 +21,7 @@
   },
   "defaults": {
     "input_color_space": "sRGB",
-    "output_color_space_16bit": "KodakEnduraPremier_gamma_2_2",
+    "output_color_space_16bit": "KodakEnduraPremier",
     "output_color_space_8bit": "DisplayP3",
     "working_color_space": "KodakEnduraPremier",
     "jpeg_quality_level": "6"
