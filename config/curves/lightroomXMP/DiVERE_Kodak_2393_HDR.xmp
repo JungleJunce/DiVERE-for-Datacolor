@@ -4,7 +4,7 @@
     xmlns:crs="http://ns.adobe.com/camera-raw-settings/1.0/"
    crs:PresetType="Normal"
    crs:Cluster=""
-   crs:UUID="54D3A7C0BF8A42E28DED726C3AC3A29D"
+   crs:UUID="2378A177EEA04095910809EC875970BE"
    crs:SupportsAmount2="True"
    crs:SupportsAmount="True"
    crs:SupportsColor="True"
@@ -72,72 +72,72 @@
      <rdf:Seq>
       <rdf:li>0, 3</rdf:li>
       <rdf:li>13, 3</rdf:li>
-      <rdf:li>27, 23</rdf:li>
-      <rdf:li>40, 145</rdf:li>
-      <rdf:li>54, 276</rdf:li>
-      <rdf:li>67, 345</rdf:li>
+      <rdf:li>16, 3</rdf:li>
+      <rdf:li>18, 4</rdf:li>
+      <rdf:li>21, 7</rdf:li>
+      <rdf:li>23, 11</rdf:li>
+      <rdf:li>26, 19</rdf:li>
+      <rdf:li>29, 31</rdf:li>
+      <rdf:li>34, 74</rdf:li>
+      <rdf:li>37, 106</rdf:li>
+      <rdf:li>49, 241</rdf:li>
+      <rdf:li>58, 307</rdf:li>
+      <rdf:li>68, 350</rdf:li>
       <rdf:li>81, 374</rdf:li>
-      <rdf:li>94, 386</rdf:li>
-      <rdf:li>107, 392</rdf:li>
-      <rdf:li>121, 395</rdf:li>
-      <rdf:li>134, 398</rdf:li>
-      <rdf:li>148, 399</rdf:li>
-      <rdf:li>161, 400</rdf:li>
-      <rdf:li>174, 400</rdf:li>
-      <rdf:li>188, 400</rdf:li>
-      <rdf:li>201, 400</rdf:li>
-      <rdf:li>215, 400</rdf:li>
-      <rdf:li>228, 400</rdf:li>
-      <rdf:li>242, 400</rdf:li>
+      <rdf:li>95, 387</rdf:li>
+      <rdf:li>112, 394</rdf:li>
+      <rdf:li>132, 397</rdf:li>
+      <rdf:li>156, 400</rdf:li>
       <rdf:li>255, 400</rdf:li>
+      <rdf:li>500, 400</rdf:li>
      </rdf:Seq>
     </crs:ToneCurvePV2012Red>
     <crs:ToneCurvePV2012Green>
      <rdf:Seq>
       <rdf:li>0, 3</rdf:li>
-      <rdf:li>13, 3</rdf:li>
-      <rdf:li>27, 22</rdf:li>
-      <rdf:li>40, 119</rdf:li>
-      <rdf:li>54, 242</rdf:li>
-      <rdf:li>67, 327</rdf:li>
-      <rdf:li>81, 367</rdf:li>
-      <rdf:li>94, 383</rdf:li>
-      <rdf:li>107, 389</rdf:li>
-      <rdf:li>121, 393</rdf:li>
-      <rdf:li>134, 396</rdf:li>
-      <rdf:li>148, 397</rdf:li>
-      <rdf:li>161, 399</rdf:li>
-      <rdf:li>174, 399</rdf:li>
-      <rdf:li>188, 400</rdf:li>
-      <rdf:li>201, 400</rdf:li>
-      <rdf:li>215, 400</rdf:li>
-      <rdf:li>228, 400</rdf:li>
-      <rdf:li>242, 400</rdf:li>
+      <rdf:li>15, 3</rdf:li>
+      <rdf:li>18, 4</rdf:li>
+      <rdf:li>20, 6</rdf:li>
+      <rdf:li>23, 10</rdf:li>
+      <rdf:li>26, 17</rdf:li>
+      <rdf:li>28, 27</rdf:li>
+      <rdf:li>31, 41</rdf:li>
+      <rdf:li>33, 58</rdf:li>
+      <rdf:li>36, 79</rdf:li>
+      <rdf:li>58, 279</rdf:li>
+      <rdf:li>68, 334</rdf:li>
+      <rdf:li>81, 368</rdf:li>
+      <rdf:li>95, 384</rdf:li>
+      <rdf:li>112, 391</rdf:li>
+      <rdf:li>132, 396</rdf:li>
+      <rdf:li>156, 398</rdf:li>
+      <rdf:li>184, 400</rdf:li>
       <rdf:li>255, 400</rdf:li>
+      <rdf:li>500, 400</rdf:li>
      </rdf:Seq>
     </crs:ToneCurvePV2012Green>
     <crs:ToneCurvePV2012Blue>
      <rdf:Seq>
       <rdf:li>0, 3</rdf:li>
-      <rdf:li>13, 3</rdf:li>
-      <rdf:li>27, 17</rdf:li>
-      <rdf:li>40, 119</rdf:li>
-      <rdf:li>54, 241</rdf:li>
-      <rdf:li>67, 317</rdf:li>
-      <rdf:li>81, 358</rdf:li>
-      <rdf:li>94, 379</rdf:li>
-      <rdf:li>107, 390</rdf:li>
-      <rdf:li>121, 395</rdf:li>
-      <rdf:li>134, 397</rdf:li>
-      <rdf:li>148, 397</rdf:li>
-      <rdf:li>161, 398</rdf:li>
-      <rdf:li>174, 399</rdf:li>
-      <rdf:li>188, 400</rdf:li>
-      <rdf:li>201, 400</rdf:li>
-      <rdf:li>215, 400</rdf:li>
-      <rdf:li>228, 400</rdf:li>
-      <rdf:li>242, 400</rdf:li>
+      <rdf:li>16, 3</rdf:li>
+      <rdf:li>18, 3</rdf:li>
+      <rdf:li>21, 5</rdf:li>
+      <rdf:li>23, 8</rdf:li>
+      <rdf:li>26, 14</rdf:li>
+      <rdf:li>28, 23</rdf:li>
+      <rdf:li>31, 36</rdf:li>
+      <rdf:li>33, 54</rdf:li>
+      <rdf:li>36, 77</rdf:li>
+      <rdf:li>41, 128</rdf:li>
+      <rdf:li>58, 275</rdf:li>
+      <rdf:li>69, 324</rdf:li>
+      <rdf:li>81, 359</rdf:li>
+      <rdf:li>95, 381</rdf:li>
+      <rdf:li>112, 393</rdf:li>
+      <rdf:li>132, 397</rdf:li>
+      <rdf:li>156, 398</rdf:li>
       <rdf:li>255, 400</rdf:li>
+      <rdf:li>500, 400</rdf:li>
      </rdf:Seq>
     </crs:ToneCurvePV2012Blue>
   </rdf:Description>
