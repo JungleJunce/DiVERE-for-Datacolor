@@ -50,21 +50,10 @@ class TheEnlarger:
         
         # 深度白平衡相关
         self._deep_wb_wrapper = None
-        
-        # 性能分析
-        self._profiling_enabled: bool = False
-        
+
         # Deep WB 可选，不可用时保持静默，避免启动期噪声
         if not DEEP_WB_AVAILABLE:
             pass
-
-    def set_profiling_enabled(self, enabled: bool) -> None:
-        """启用/关闭预览管线Profiling"""
-        self._profiling_enabled = bool(enabled)
-        self.pipeline_processor.set_profiling_enabled(enabled)
-
-    def is_profiling_enabled(self) -> bool:
-        return self._profiling_enabled
 
     # =======================
     # 主要处理接口
@@ -218,16 +207,10 @@ class TheEnlarger:
             
             # 计算光源估计（归一化的原始均值）
             illuminant = original_mean / np.sum(original_mean)
-            
-            t3 = time.time()
-            if self._profiling_enabled:
-                print(f"AI自动校色耗时: 预处理={(t1 - t0)*1000:.1f}ms, 推理={(t2 - t1)*1000:.1f}ms, 统计/收尾={(t3 - t2)*1000:.1f}ms, 总={(t3 - t0)*1000:.1f}ms")
-            
+
             return (gains[0], gains[1], gains[2], illuminant[0], illuminant[1], illuminant[2])
-            
+
         except Exception as e:
-            if self._profiling_enabled:
-                print(f"Deep White Balance error: {e}")
             return (0.0, 0.0, 0.0, 1.0, 1.0, 1.0)
 
     # =======================

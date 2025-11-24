@@ -27,9 +27,8 @@ class FilmPipelineProcessor:
         
         # GPU加速器（共享math_ops的实例）
         self.gpu_accelerator = self.math_ops.gpu_accelerator
-        
+
         # 性能监控
-        self._profiling_enabled = False
         self._last_profile: Dict[str, float] = {}
 
         # 矩阵管理
@@ -97,10 +96,6 @@ class FilmPipelineProcessor:
         self._density_matrices.clear()
         self._load_default_matrices()
 
-    def set_profiling_enabled(self, enabled: bool) -> None:
-        """启用/关闭性能分析"""
-        self._profiling_enabled = enabled
-    
     def _get_cv2_interpolation(self) -> int:
         """根据预览质量设置获取OpenCV插值方法"""
         quality_map = {
@@ -177,9 +172,6 @@ class FilmPipelineProcessor:
         profile['total_preview_ms'] = (time.time() - t_start) * 1000.0
         profile['scale_factor'] = scale_factor
         self._last_profile = profile
-
-        if self._profiling_enabled:
-            self._print_preview_profile(profile)
 
         return image.copy_with_new_array(proxy_array)
     
@@ -506,13 +498,10 @@ class FilmPipelineProcessor:
             profile['input_colorspace_ms'] = t_input_total
             profile['math_pipeline_ms'] = t_math_total
             profile['output_colorspace_ms'] = t_output_total
-        
+
         # 记录总时间和性能分析
         profile['total_full_precision_ms'] = (time.time() - t_start) * 1000.0
         self._last_profile = profile
-        
-        if self._profiling_enabled:
-            self._print_full_precision_profile(profile)
 
         return image.copy_with_new_array(working_array)
     

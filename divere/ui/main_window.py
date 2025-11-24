@@ -415,13 +415,6 @@ class MainWindow(QMainWindow):
         config_manager_action.triggered.connect(self._open_config_manager)
         tools_menu.addAction(config_manager_action)
 
-        # 启用预览Profiling
-        tools_menu.addSeparator()
-        profiling_action = QAction("启用预览Profiling", self)
-        profiling_action.setCheckable(True)
-        profiling_action.toggled.connect(self._toggle_profiling)
-        tools_menu.addAction(profiling_action)
-        
         # LUT数学一致性验证功能已移除
         
         # 帮助菜单
@@ -2629,13 +2622,7 @@ class MainWindow(QMainWindow):
                 QMessageBox.warning(self, "提示", f"应用临时基色失败: {e}")
             except Exception:
                 pass
-        
-    def _toggle_profiling(self, enabled: bool):
-        """切换预览Profiling"""
-        self.context.the_enlarger.set_profiling_enabled(enabled)
-        self.context.color_space_manager.set_profiling_enabled(enabled)
-        self.statusBar().showMessage("预览Profiling已开启" if enabled else "预览Profiling已关闭")
-    
+
     def on_parameter_changed(self):
         """参数改变时的回调"""
         new_params = self.parameter_panel.get_current_params()

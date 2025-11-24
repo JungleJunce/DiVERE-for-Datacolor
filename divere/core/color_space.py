@@ -77,18 +77,11 @@ class ColorSpaceManager:
         # 增加一个简单的转换缓存，加速重复转换
         self._convert_cache: "OrderedDict[Any, Tuple[np.ndarray, np.ndarray]]" = OrderedDict()  # 使用 OrderedDict 实现正确的 LRU
         self._convert_cache_max_size: int = 100  # 限制缓存大小，防止无限增长
-        # Profiling 开关
-        self._profiling_enabled: bool = False
-        
+
         # 工作空间管理
         self._working_space: str = "ACEScg"  # 默认工作空间
         self._load_working_space_from_config()
-    def set_profiling_enabled(self, enabled: bool) -> None:
-        self._profiling_enabled = bool(enabled)
 
-    def is_profiling_enabled(self) -> bool:
-        return self._profiling_enabled
-    
     def _load_colorspaces_from_json(self):
         """从JSON文件加载色彩空间定义（支持用户配置优先）"""
         try:
@@ -308,9 +301,9 @@ class ColorSpaceManager:
                     old_vector = None
 
             return self._convert_cache[cache_key]
-            
+
         except Exception as e:
-            if self._verbose_logs or self._profiling_enabled:
+            if self._verbose_logs:
                 print(f"色彩空间转换计算失败: {e}")
             return np.eye(3), np.array([1.0, 1.0, 1.0])
     
@@ -634,7 +627,7 @@ class ColorSpaceManager:
             proxy_scale=image.proxy_scale,
             metadata=image.metadata  # 保留并传递元数据（如 source_wh/crop_overlay 等）
         )
-        if self._verbose_logs or self._profiling_enabled:
+        if self._verbose_logs:
             print(f"设置图像色彩空间: {image.color_space} -> {color_space}")
         return new_image
     
@@ -680,16 +673,8 @@ class ColorSpaceManager:
             # 使用在线计算的转换矩阵和增益向量
             t2 = time.time()
             conversion_matrix, gain_vector = self.calculate_color_space_conversion(source_space, self._working_space)
-            t3 = time.time()
             linear_image.array = self._apply_color_conversion(linear_image.array, conversion_matrix, gain_vector)
-            t4 = time.time()
-            if self._profiling_enabled:
-                msg = (
-                    f"到工作空间Profiling: "
-                    f"gamma逆变换={(t1 - t0)*1000:.1f}ms, 计算矩阵={(t3 - t2)*1000:.1f}ms, 应用矩阵={(t4 - t3)*1000:.1f}ms"
-                )
-                print(msg)
-        
+
         linear_image.color_space = self._working_space
         return linear_image
     
@@ -710,15 +695,8 @@ class ColorSpaceManager:
             t2 = time.time()
         
         # 应用gamma校正
-        t3 = time.time()
         image.array = self._apply_gamma(image.array, self._color_spaces[target_space]["gamma"])
-        t4 = time.time()
         image.color_space = target_space
-        
-        if self._profiling_enabled:
-            print(
-                f"显示空间转换Profiling: 计算矩阵={(t1 - t0)*1000 if 't1' in locals() else 0:.1f}ms, 应用矩阵={(t2 - t1)*1000 if 't2' in locals() else 0:.1f}ms, gamma={(t4 - t3)*1000:.1f}ms"
-            )
 
         return image
     
