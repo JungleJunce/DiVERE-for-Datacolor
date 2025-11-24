@@ -69,6 +69,8 @@ jobs:
         python -m pip install --upgrade pip wheel setuptools build
         # 安装项目本身及其依赖（从 pyproject.toml）
         pip install -e .
+        # 安装 backports 依赖（修复 PyInstaller 打包问题）
+        pip install backports.zoneinfo backports.entry-points-selectable || true
         # GPU 相关可选依赖
         if [ "${{ matrix.platform }}" = "macos" ]; then
           pip install --extra-index-url https://pypi.org/simple/ "pyobjc-framework-Metal" "pyobjc-framework-MetalPerformanceShaders" || true
@@ -174,6 +176,11 @@ jobs:
           --hidden-import "tifffile" \
           --hidden-import "imagecodecs" \
           --hidden-import "cma" \
+          --hidden-import "backports" \
+          --hidden-import "backports.zoneinfo" \
+          --hidden-import "backports.entry_points_selectable" \
+          --exclude-module "tkinter" \
+          --exclude-module "matplotlib" \
           divere/__main__.py
         echo "✅ PyInstaller build completed"
 
