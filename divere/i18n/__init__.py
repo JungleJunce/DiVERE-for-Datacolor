@@ -75,16 +75,16 @@ class I18nManager:
             try:
                 # 获取当前模块的可能路径
                 possible_paths = [
-                    os.path.join(path_manager._get_project_root(), "divere", "i18n"),
+                    os.path.join(path_manager._get_project_root(), "divere", "assets", "i18n"),
                 ]
 
                 # 打包环境路径
                 if path_manager._is_pyinstaller_bundle():
                     bundle_dir = path_manager._get_pyinstaller_root()
                     possible_paths.extend([
-                        os.path.join(bundle_dir, "divere", "i18n"),
+                        os.path.join(bundle_dir, "divere", "assets", "i18n"),
                         os.path.join(bundle_dir, "i18n"),
-                        os.path.join(bundle_dir, "_internal", "divere", "i18n"),
+                        os.path.join(bundle_dir, "_internal", "divere", "assets", "i18n"),
                         os.path.join(bundle_dir, "_internal", "i18n")
                     ])
 
@@ -93,10 +93,10 @@ class I18nManager:
                     executable_dir = path_manager._get_app_bundle_root()
                     bundle_contents = os.path.dirname(executable_dir)
                     possible_paths.extend([
-                        os.path.join(executable_dir, "divere", "i18n"),
-                        os.path.join(executable_dir, "i18n"),
-                        os.path.join(bundle_contents, "Resources", "divere", "i18n"),
-                        os.path.join(bundle_contents, "Resources", "i18n")
+                        os.path.join(executable_dir, "divere", "assets", "i18n"),
+                        os.path.join(executable_dir, "assets", "i18n"),
+                        os.path.join(bundle_contents, "Resources", "divere", "assets", "i18n"),
+                        os.path.join(bundle_contents, "Resources", "assets", "i18n")
                     ])
 
                 # 将路径添加到 PathManager
