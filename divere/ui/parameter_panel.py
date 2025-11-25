@@ -626,8 +626,9 @@ class ParameterPanel(QWidget):
         neutral_button_layout.setSpacing(4)  # 按钮间距
 
         # 取点图标按钮
+        from divere.utils.app_paths import resolve_data_path
+        icon_path = resolve_data_path("assets", "dropper-icon.png")
         self.pick_neutral_point_button = QPushButton()
-        icon_path = Path(__file__).parent / "asset" / "dropper-icon.png"
         self.pick_neutral_point_button.setIcon(QIcon(str(icon_path)))
         self.pick_neutral_point_button.setIconSize(QSize(20, 20))  # 图标大小
         self.pick_neutral_point_button.setFixedSize(28, 28)  # 按钮固定大小（正方形）
