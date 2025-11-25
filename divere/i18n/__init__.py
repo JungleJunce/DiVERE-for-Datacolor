@@ -1,6 +1,5 @@
 """
 多语言支持模块 (Internationalization - i18n)
-
 提供文件驱动的多语言支持，使用 JSON 格式存储翻译。
 """
 
