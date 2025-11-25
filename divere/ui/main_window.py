@@ -23,6 +23,7 @@ from divere.utils.enhanced_config_manager import enhanced_config_manager
 from divere.utils.preset_manager import PresetManager, apply_preset_to_params
 from divere.utils.auto_preset_manager import AutoPresetManager
 from divere.utils.spectral_sharpening import run as run_spectral_sharpening
+from divere.i18n import tr, get_available_languages, set_language, get_current_language
 
 from .preview_widget import PreviewWidget
 from .save_dialog import SaveImageDialog
@@ -53,7 +54,7 @@ class MainWindow(QMainWindow):
         self._neutral_point_white_point = 5500  # 默认色温5500K
 
         # 设置窗口
-        self.setWindowTitle("DiVERE - 数字彩色放大机")
+        self.setWindowTitle(tr("main_window.title"))
         self.setGeometry(100, 100, 1400, 900)
         
         # 创建界面
@@ -296,94 +297,94 @@ class MainWindow(QMainWindow):
     def _create_menus(self):
         """创建菜单栏"""
         menubar = self.menuBar()
-        
+
         # 文件菜单
-        file_menu = menubar.addMenu("文件")
-        
+        file_menu = menubar.addMenu(tr("main_window.menu.file"))
+
         # 打开图像
-        open_action = QAction("打开图像", self)
+        open_action = QAction(tr("main_window.menu.file_open"), self)
         open_action.setShortcut(QKeySequence.StandardKey.Open)
         open_action.triggered.connect(self._open_image)
         file_menu.addAction(open_action)
-        
+
         file_menu.addSeparator()
 
         # 加载预设
-        load_preset_action = QAction("导入预设...", self)
-        load_preset_action.setToolTip("从文件导入预设并应用到当前图像")
+        load_preset_action = QAction(tr("main_window.menu.file_import_preset"), self)
+        load_preset_action.setToolTip(tr("main_window.menu.file_import_preset_tooltip"))
         load_preset_action.triggered.connect(self._load_preset)
         file_menu.addAction(load_preset_action)
 
         # 保存预设
-        save_preset_action = QAction("导出预设...", self)
-        save_preset_action.setToolTip("将当前参数导出为预设文件")
+        save_preset_action = QAction(tr("main_window.menu.file_export_preset"), self)
+        save_preset_action.setToolTip(tr("main_window.menu.file_export_preset_tooltip"))
         save_preset_action.triggered.connect(self._save_preset)
         file_menu.addAction(save_preset_action)
-        
+
         file_menu.addSeparator()
-        
+
         # 选择输入色彩变换
-        colorspace_action = QAction("设置输入色彩变换", self)
+        colorspace_action = QAction(tr("main_window.menu.file_set_input_color_transform"), self)
         colorspace_action.triggered.connect(self._select_input_color_space)
         file_menu.addAction(colorspace_action)
-        
+
         # 设置工作色彩空间
-        working_space_action = QAction("设置工作色彩空间", self)
+        working_space_action = QAction(tr("main_window.menu.file_set_working_color_space"), self)
         working_space_action.triggered.connect(self._select_working_color_space)
         file_menu.addAction(working_space_action)
-        
+
         file_menu.addSeparator()
-        
+
         # 保存图像
-        save_action = QAction("保存图像", self)
+        save_action = QAction(tr("main_window.menu.file_save"), self)
         save_action.setShortcut(QKeySequence.StandardKey.Save)
         save_action.triggered.connect(self._save_image)
         file_menu.addAction(save_action)
 
         # 保存图像副本
-        save_as_action = QAction("另存为...", self)
+        save_as_action = QAction(tr("main_window.menu.file_save_as"), self)
         save_as_action.setShortcut(QKeySequence.StandardKey.SaveAs)
         save_as_action.triggered.connect(self._save_image_as)
         file_menu.addAction(save_as_action)
-        
+
         file_menu.addSeparator()
-        
+
         # 退出
-        exit_action = QAction("退出", self)
+        exit_action = QAction(tr("main_window.menu.file_exit"), self)
         # 移除快捷键，因为 macOS Cmd+Q 是系统级快捷键
         # Channel Gamma 功能已改用 Option/Alt+Q 等快捷键
         # 用户可通过菜单或系统快捷键 (Cmd+W/Alt+F4) 退出
         exit_action.triggered.connect(self.close)
         file_menu.addAction(exit_action)
-        
+
         # 编辑菜单
-        edit_menu = menubar.addMenu("编辑")
-        
+        edit_menu = menubar.addMenu(tr("main_window.menu.edit"))
+
         # 重置参数
-        reset_action = QAction("重置参数", self)
+        reset_action = QAction(tr("main_window.menu.edit_reset_parameters"), self)
         reset_action.triggered.connect(self._reset_parameters)
         edit_menu.addAction(reset_action)
-        
+
         # 视图菜单
-        view_menu = menubar.addMenu("视图")
-        
+        view_menu = menubar.addMenu(tr("main_window.menu.view"))
+
         # 显示原始图像
-        show_original_action = QAction("显示原始图像", self)
+        show_original_action = QAction(tr("main_window.menu.view_show_original"), self)
         show_original_action.setCheckable(True)
         show_original_action.triggered.connect(self._toggle_original_view)
         view_menu.addAction(show_original_action)
-        
+
         view_menu.addSeparator()
-        
+
         # 视图控制
-        reset_view_action = QAction("重置视图", self)
+        reset_view_action = QAction(tr("main_window.menu.view_reset_view"), self)
         reset_view_action.setShortcut(QKeySequence("0"))
         reset_view_action.triggered.connect(self._reset_view)
         view_menu.addAction(reset_view_action)
 
         # 主题切换
         view_menu.addSeparator()
-        dark_action = QAction("暗黑模式", self)
+        dark_action = QAction(tr("main_window.menu.view_dark_mode"), self)
         dark_action.setCheckable(True)
         try:
             dark_action.setChecked(current_theme(QApplication.instance()) == "dark")
@@ -391,46 +392,78 @@ class MainWindow(QMainWindow):
             dark_action.setChecked(True)
         dark_action.toggled.connect(self._toggle_dark_mode)
         view_menu.addAction(dark_action)
-        
+
+        # 语言切换
+        view_menu.addSeparator()
+        language_menu = view_menu.addMenu(tr("main_window.menu.view_language"))
+
+        # 创建语言切换动作组（单选）
+        from PySide6.QtGui import QActionGroup
+        self._language_action_group = QActionGroup(self)
+        self._language_action_group.setExclusive(True)
+
+        # 获取当前语言
+        current_lang = get_current_language()
+
+        # 为每种可用语言创建菜单项
+        for lang_info in get_available_languages():
+            lang_code = lang_info["code"]
+            lang_name = lang_info["name"]
+
+            lang_action = QAction(lang_name, self)
+            lang_action.setCheckable(True)
+            lang_action.setData(lang_code)  # 存储语言代码
+
+            # 设置当前语言为选中状态
+            if lang_code == current_lang:
+                lang_action.setChecked(True)
+
+            # 连接信号
+            lang_action.triggered.connect(lambda checked, code=lang_code: self._change_language(code))
+
+            # 添加到动作组和菜单
+            self._language_action_group.addAction(lang_action)
+            language_menu.addAction(lang_action)
+
         # 工具菜单
-        tools_menu = menubar.addMenu("工具")
-        
+        tools_menu = menubar.addMenu(tr("main_window.menu.tools"))
+
         # 直接添加分隔符，移除估算胶片类型功能
-        
+
         # 文件分类规则管理器
-        file_classification_action = QAction("文件分类规则管理器", self)
-        file_classification_action.setToolTip("管理文件分类规则和默认预设文件")
+        file_classification_action = QAction(tr("main_window.menu.tools_file_classification_manager"), self)
+        file_classification_action.setToolTip(tr("main_window.menu.tools_file_classification_manager_tooltip"))
         file_classification_action.triggered.connect(self._open_file_classification_manager)
         tools_menu.addAction(file_classification_action)
-        
+
         # 精确通道分离IDT计算工具
-        idt_calculator_action = QAction("光源-传感器串扰计算工具", self)
-        idt_calculator_action.setToolTip("通过三张光源图片计算精确的IDT色彩空间")
+        idt_calculator_action = QAction(tr("main_window.menu.tools_idt_calculator"), self)
+        idt_calculator_action.setToolTip(tr("main_window.menu.tools_idt_calculator_tooltip"))
         idt_calculator_action.triggered.connect(self._open_idt_calculator)
         tools_menu.addAction(idt_calculator_action)
 
         # 配置管理
         tools_menu.addSeparator()
-        config_manager_action = QAction("配置管理器", self)
+        config_manager_action = QAction(tr("main_window.menu.tools_config_manager"), self)
         config_manager_action.triggered.connect(self._open_config_manager)
         tools_menu.addAction(config_manager_action)
 
         # LUT数学一致性验证功能已移除
-        
+
         # 帮助菜单
-        help_menu = menubar.addMenu("帮助")
-        
+        help_menu = menubar.addMenu(tr("main_window.menu.help"))
+
         # 快捷键参考
-        shortcuts_action = QAction("快捷键参考", self)
+        shortcuts_action = QAction(tr("main_window.menu.help_shortcuts"), self)
         shortcuts_action.setShortcut(QKeySequence("F1"))
-        shortcuts_action.setToolTip("显示所有可用的键盘快捷键")
+        shortcuts_action.setToolTip(tr("main_window.menu.help_shortcuts_tooltip"))
         shortcuts_action.triggered.connect(self._show_shortcuts_help)
         help_menu.addAction(shortcuts_action)
-        
+
         help_menu.addSeparator()
-        
+
         # 关于
-        about_action = QAction("关于", self)
+        about_action = QAction(tr("main_window.menu.help_about"), self)
         about_action.triggered.connect(self._show_about)
         help_menu.addAction(about_action)
     
@@ -439,34 +472,34 @@ class MainWindow(QMainWindow):
         toolbar = QToolBar()
         toolbar.setObjectName("mainToolBar")
         self.addToolBar(toolbar)
-        
-        
+
+
         # 打开图像
-        open_action = QAction("打开", self)
+        open_action = QAction(tr("main_window.toolbar.open"), self)
         open_action.triggered.connect(self._open_image)
         toolbar.addAction(open_action)
-        
+
         # 保存图像
-        save_action = QAction("保存", self)
+        save_action = QAction(tr("main_window.toolbar.save"), self)
         save_action.triggered.connect(self._save_image)
         toolbar.addAction(save_action)
-        
+
         toolbar.addSeparator()
-        
+
         # 重置参数
-        reset_action = QAction("粘贴默认", self)
+        reset_action = QAction(tr("main_window.toolbar.paste_default"), self)
         reset_action.triggered.connect(self._reset_parameters)
         toolbar.addAction(reset_action)
-        
+
         # 设为当前文件夹默认
-        set_folder_default_action = QAction("复制为默认", self)
-        set_folder_default_action.setToolTip("将当前参数设置保存为当前文件夹的默认设置")
+        set_folder_default_action = QAction(tr("main_window.toolbar.copy_as_default"), self)
+        set_folder_default_action.setToolTip(tr("main_window.toolbar.copy_as_default_tooltip"))
         set_folder_default_action.triggered.connect(self._set_folder_default)
         toolbar.addAction(set_folder_default_action)
-        
+
         # 沿用接触印相设置（只在聚焦裁剪时可用）
-        apply_contactsheet_action = QAction("沿用接触印相设置", self)
-        apply_contactsheet_action.setToolTip("将接触印相的调色参数复制到当前裁剪")
+        apply_contactsheet_action = QAction(tr("main_window.toolbar.apply_contactsheet_settings"), self)
+        apply_contactsheet_action.setToolTip(tr("main_window.toolbar.apply_contactsheet_settings_tooltip"))
         apply_contactsheet_action.triggered.connect(self._on_apply_contactsheet_to_crop)
         toolbar.addAction(apply_contactsheet_action)
         self._apply_contactsheet_action = apply_contactsheet_action
@@ -477,8 +510,8 @@ class MainWindow(QMainWindow):
             pass
 
         # 应用当前设置到接触印相（只在聚焦裁剪时可用）
-        apply_to_contactsheet_action = QAction("应用当前设置到接触印相", self)
-        apply_to_contactsheet_action.setToolTip("将当前裁剪的调色参数复制到接触印相")
+        apply_to_contactsheet_action = QAction(tr("main_window.toolbar.apply_to_contactsheet"), self)
+        apply_to_contactsheet_action.setToolTip(tr("main_window.toolbar.apply_to_contactsheet_tooltip"))
         apply_to_contactsheet_action.triggered.connect(self._on_apply_to_contactsheet)
         toolbar.addAction(apply_to_contactsheet_action)
         self._apply_to_contactsheet_action = apply_to_contactsheet_action
@@ -492,7 +525,7 @@ class MainWindow(QMainWindow):
     
     def _create_statusbar(self):
         """创建状态栏"""
-        self.statusBar().showMessage("就绪")
+        self.statusBar().showMessage(tr("main_window.status.ready"))
 
     def _apply_theme_and_refresh(self, theme: str):
         try:
@@ -510,19 +543,43 @@ class MainWindow(QMainWindow):
     def _toggle_dark_mode(self, enabled: bool):
         theme = "dark" if enabled else "light"
         self._apply_theme_and_refresh(theme)
-    
+
+    def _change_language(self, lang_code: str):
+        """
+        切换应用语言
+
+        Args:
+            lang_code: 语言代码，如 zh_CN, en_US
+        """
+        # 切换语言
+        if set_language(lang_code):
+            # 显示提示消息
+            QMessageBox.information(
+                self,
+                tr("common.info"),
+                "Language changed successfully. Some UI elements will update immediately, "
+                "while others require restarting the application.\n\n"
+                "语言已更改。部分界面元素将立即更新，其他元素需要重启应用后生效。"
+            )
+
+            # 立即更新窗口标题
+            self.setWindowTitle(tr("main_window.title"))
+
+            # 注意：菜单项、工具栏等需要重新创建才能完全更新
+            # 为了完整的语言切换体验，建议重启应用
+
     def _open_image(self):
         """打开图像文件"""
         # 获取上次打开的目录
         last_directory = enhanced_config_manager.get_directory("open_image")
-        
+
         file_path, _ = QFileDialog.getOpenFileName(
             self,
-            "打开图像文件",
+            tr("main_window.dialogs.open_image_title"),
             last_directory,
-            "图像文件 (*.jpg *.jpeg *.png *.tiff *.tif *.bmp *.webp *.fff)"
+            tr("main_window.dialogs.open_image_filter")
         )
-        
+
         if file_path:
             # 保存当前目录（写入父目录）
             enhanced_config_manager.set_directory("open_image", file_path)

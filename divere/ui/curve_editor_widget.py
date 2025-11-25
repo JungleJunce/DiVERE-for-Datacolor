@@ -4,7 +4,7 @@
 """
 
 import numpy as np
-from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel, 
+from PySide6.QtWidgets import (QWidget, QVBoxLayout, QHBoxLayout, QLabel,
                             QPushButton, QComboBox, QGroupBox, QDoubleSpinBox,
                             QGridLayout, QSizePolicy, QFileDialog, QInputDialog, QMessageBox)
 from PySide6.QtCore import Qt, QPointF, Signal, QRectF
@@ -14,6 +14,7 @@ from pathlib import Path
 from typing import List, Tuple, Optional, Dict
 
 from ..core.data_types import Curve
+from ..i18n import tr
 
 
 class CurveEditWidget(QWidget):
@@ -513,19 +514,19 @@ class CurveEditWidget(QWidget):
         # 绘制轴标题
         font.setPointSize(10)
         painter.setFont(font)
-        
+
         # X轴标题
-        x_title = "输入密度"
+        x_title = tr("curve_editor.axis.input_density")
         x_title_width = painter.fontMetrics().horizontalAdvance(x_title)
         painter.setPen(QPen(self.text_color, 1))
-        painter.drawText(int(draw_rect.center().x() - x_title_width // 2), 
+        painter.drawText(int(draw_rect.center().x() - x_title_width // 2),
                         int(draw_rect.bottom()) + 35, x_title)
-        
+
         # Y轴标题（垂直绘制）
         painter.save()
         painter.translate(15, int(draw_rect.center().y()))
         painter.rotate(-90)
-        y_title = "SDR EV值"
+        y_title = tr("curve_editor.axis.sdr_ev")
         y_title_width = painter.fontMetrics().horizontalAdvance(y_title)
         painter.setPen(QPen(self.text_color, 1))
         painter.drawText(-y_title_width // 2, -5, y_title)
@@ -674,16 +675,16 @@ class CurveEditorWidget(QWidget):
         
         # 通道选择（放在曲线控件上方）
         channel_layout = QHBoxLayout()
-        channel_layout.addWidget(QLabel("通道:"))
+        channel_layout.addWidget(QLabel(tr("curve_editor.channel_label")))
         self.channel_combo = QComboBox()
-        self.channel_combo.addItem("RGB", "RGB")
-        self.channel_combo.addItem("红", "R")
-        self.channel_combo.addItem("绿", "G")
-        self.channel_combo.addItem("蓝", "B")
+        self.channel_combo.addItem(tr("parameter_panel.color_channels.rgb"), "RGB")
+        self.channel_combo.addItem(tr("parameter_panel.color_channels.red"), "R")
+        self.channel_combo.addItem(tr("parameter_panel.color_channels.green"), "G")
+        self.channel_combo.addItem(tr("parameter_panel.color_channels.blue"), "B")
         self.channel_combo.setMaximumWidth(150)
         channel_layout.addWidget(self.channel_combo)
         channel_layout.addStretch()
-        
+
         layout.addLayout(channel_layout)
         
         # 曲线编辑画布
@@ -692,35 +693,33 @@ class CurveEditorWidget(QWidget):
         
         # 曲线控制（已保存曲线和操作按钮）
         control_layout = QHBoxLayout()
-        
+
         # 已保存曲线选择
-        control_layout.addWidget(QLabel("已保存曲线:"))
+        control_layout.addWidget(QLabel(tr("curve_editor.saved_curves_label")))
         self.curve_combo = QComboBox()
         # 不添加固定的custom选项，只添加实际的预设曲线
         for curve_key, curve_data in sorted(self.preset_curves.items(), key=lambda x: x[1]["name"]):
             self.curve_combo.addItem(curve_data["name"], curve_key)
         self.curve_combo.setMaximumWidth(200)
         control_layout.addWidget(self.curve_combo)
-        
+
         # 设置默认选择为"Kodak Endura Paper"
         kodak_index = self.curve_combo.findText("Kodak Endura Paper")
         if kodak_index >= 0:
             self.curve_combo.setCurrentIndex(kodak_index)
-        
+
         control_layout.addStretch()
-        
+
         # 操作按钮
-        self.reset_button = QPushButton("重置为线性")
-        self.save_button = QPushButton("保存曲线")
+        self.reset_button = QPushButton(tr("curve_editor.button_reset_linear"))
+        self.save_button = QPushButton(tr("curve_editor.button_save_curve"))
         control_layout.addWidget(self.reset_button)
         control_layout.addWidget(self.save_button)
-        
+
         layout.addLayout(control_layout)
         
         # 使用说明
-        help_label = QLabel(
-            "使用说明：左键点击添加/选择控制点，拖拽移动点，右键删除点，Delete键删除选中点"
-        )
+        help_label = QLabel(tr("curve_editor.usage_hint"))
         help_label.setWordWrap(True)
         help_label.setStyleSheet("color: gray; font-size: 10px;")
         layout.addWidget(help_label)
@@ -832,27 +831,27 @@ class CurveEditorWidget(QWidget):
                 default_name = self.current_curve_name[1:]  # 去掉星号
             else:
                 default_name = self.current_curve_name
-        
+
         name, ok = QInputDialog.getText(
-            self, 
-            "保存曲线", 
-            "请输入曲线名称:",
+            self,
+            tr("curve_editor.dialogs.save_curve_title"),
+            tr("curve_editor.dialogs.curve_name_prompt"),
             text=default_name
         )
-        
+
         if not ok or not name:
             return
-        
+
         # 获取描述
         description, ok = QInputDialog.getText(
-            self, 
-            "保存曲线", 
-            "请输入曲线描述（可选）:"
+            self,
+            tr("curve_editor.dialogs.save_curve_title"),
+            tr("curve_editor.dialogs.curve_description_prompt")
         )
-        
+
         if not ok:
             return
-        
+
         # 准备数据
         all_curves = self.curve_edit_widget.get_all_curves()
         curve_data = {
@@ -861,39 +860,47 @@ class CurveEditorWidget(QWidget):
             "version": 2,
             "curves": all_curves
         }
-        
+
         # 生成文件名（去除特殊字符）
         safe_filename = "".join(c for c in name if c.isalnum() or c in (' ', '-', '_')).rstrip()
         safe_filename = safe_filename.replace(' ', '_')
-        
+
         # 打开文件保存对话框
         file_path, _ = QFileDialog.getSaveFileName(
             self,
-            "保存曲线文件",
+            tr("curve_editor.dialogs.save_curve_title"),
             f"config/curves/{safe_filename}.json",
             "JSON文件 (*.json)"
         )
-        
+
         if file_path:
             try:
                 # 确保文件有.json扩展名
                 if not file_path.endswith('.json'):
                     file_path += '.json'
-                
+
                 # 保存文件
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(curve_data, f, indent=2, ensure_ascii=False)
-                
-                QMessageBox.information(self, "成功", f"曲线已保存到：\n{file_path}")
-                
+
+                QMessageBox.information(
+                    self,
+                    tr("curve_editor.dialogs.success_title"),
+                    tr("curve_editor.dialogs.save_success_message", file_path=file_path)
+                )
+
                 # 重新加载曲线列表并自动应用刚保存的曲线
                 self._load_preset_curves()
                 self._refresh_curve_combo()
                 # 自动选择并应用刚保存的曲线
                 self._apply_saved_curve(safe_filename)
-                
+
             except Exception as e:
-                QMessageBox.critical(self, "错误", f"保存曲线时出错：\n{str(e)}")
+                QMessageBox.critical(
+                    self,
+                    tr("curve_editor.dialogs.error_title"),
+                    tr("curve_editor.dialogs.save_error_message", error=str(e))
+                )
     
     def reload_curves_config(self):
         """重新加载curves配置（响应配置文件变化）"""

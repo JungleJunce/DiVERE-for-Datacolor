@@ -25,6 +25,7 @@ from divere.ui.ucs_triangle_widget import UcsTriangleWidget
 from divere.core.color_space import xy_to_uv, uv_to_xy
 from divere.utils.enhanced_config_manager import enhanced_config_manager
 from divere.utils.colorchecker_loader import validate_colorchecker_workspace_compatibility
+from divere.i18n import tr
 
 
 class PrecisionSlider(QSlider):
@@ -168,11 +169,11 @@ class ParameterPanel(QWidget):
         content_layout = QVBoxLayout(content_widget)
         
         tab_widget = QTabWidget()
-        tab_widget.addTab(self._create_basic_tab(), "输入色彩科学")
-        tab_widget.addTab(self._create_density_tab(), "密度与矩阵")
-        tab_widget.addTab(self._create_rgb_tab(), "RGB曝光")
-        tab_widget.addTab(self._create_curve_tab(), "密度曲线")
-        tab_widget.addTab(self._create_debug_tab(), "管线控制")
+        tab_widget.addTab(self._create_basic_tab(), tr("parameter_panel.tabs.input_color"))
+        tab_widget.addTab(self._create_density_tab(), tr("parameter_panel.tabs.density_matrix"))
+        tab_widget.addTab(self._create_rgb_tab(), tr("parameter_panel.tabs.rgb_exposure"))
+        tab_widget.addTab(self._create_curve_tab(), tr("parameter_panel.tabs.density_curves"))
+        tab_widget.addTab(self._create_debug_tab(), tr("parameter_panel.tabs.pipeline_control"))
         
         content_layout.addWidget(tab_widget)
         content_layout.addStretch()
@@ -193,25 +194,25 @@ class ParameterPanel(QWidget):
         film_type_group = self._create_film_type_group()
         layout.addWidget(film_type_group)
         
-        colorspace_group = QGroupBox("输入色彩变换")
+        colorspace_group = QGroupBox(tr("parameter_panel.groups.input_color_transform"))
         colorspace_layout = QGridLayout(colorspace_group)
         # IDT Gamma（在下拉菜单上方）
         self.idt_gamma_slider = PrecisionSlider(Qt.Orientation.Horizontal)
         self.idt_gamma_spinbox = QDoubleSpinBox()
         self._setup_slider_spinbox(self.idt_gamma_slider, self.idt_gamma_spinbox, 500, 2800, 0.5, 2.8, 0.005)
-        colorspace_layout.addWidget(QLabel("IDT Gamma:"), 0, 0)
+        colorspace_layout.addWidget(QLabel(tr("parameter_panel.labels.idt_gamma")), 0, 0)
         colorspace_layout.addWidget(self.idt_gamma_slider, 0, 1)
         colorspace_layout.addWidget(self.idt_gamma_spinbox, 0, 2)
         self.input_colorspace_combo = QComboBox()
         spaces = self.context.color_space_manager.get_idt_color_spaces()
         for space in spaces:
             self.input_colorspace_combo.addItem(space, space)
-        colorspace_layout.addWidget(QLabel("IDT 基色:"), 1, 0)
+        colorspace_layout.addWidget(QLabel(tr("parameter_panel.labels.idt_primaries")), 1, 0)
         colorspace_layout.addWidget(self.input_colorspace_combo, 1, 1, 1, 2)
         layout.addWidget(colorspace_group)
         
         # --- Spectral Sharpening Section ---
-        self.enable_scanner_spectral_checkbox = QCheckBox("扫描仪光谱锐化（串扰校正）")
+        self.enable_scanner_spectral_checkbox = QCheckBox(tr("parameter_panel.checkboxes.spectral_sharpening"))
         layout.addWidget(self.enable_scanner_spectral_checkbox)
 
         self.ucs_widget = UcsTriangleWidget()
@@ -220,40 +221,40 @@ class ParameterPanel(QWidget):
 
         # 色卡选择器和变换按钮的水平布局
         cc_selector_layout = QHBoxLayout()
-        self.cc_selector_checkbox = QCheckBox("色卡选择器")
+        self.cc_selector_checkbox = QCheckBox(tr("parameter_panel.checkboxes.colorchecker_selector"))
         self.cc_selector_checkbox.setVisible(False)
         cc_selector_layout.addWidget(self.cc_selector_checkbox)
-        
+
         # 色卡变换按钮
-        self.cc_flip_h_button = QPushButton("↔")
-        self.cc_flip_h_button.setToolTip("水平翻转色卡选择器")
+        self.cc_flip_h_button = QPushButton(tr("parameter_panel.buttons.flip_horizontal_symbol"))
+        self.cc_flip_h_button.setToolTip(tr("parameter_panel.tooltips.flip_horizontal"))
         self.cc_flip_h_button.setFixedWidth(30)
         self.cc_flip_h_button.setVisible(False)
         cc_selector_layout.addWidget(self.cc_flip_h_button)
-        
-        self.cc_flip_v_button = QPushButton("↕")
-        self.cc_flip_v_button.setToolTip("竖直翻转色卡选择器")
+
+        self.cc_flip_v_button = QPushButton(tr("parameter_panel.buttons.flip_vertical_symbol"))
+        self.cc_flip_v_button.setToolTip(tr("parameter_panel.tooltips.flip_vertical"))
         self.cc_flip_v_button.setFixedWidth(30)
         self.cc_flip_v_button.setVisible(False)
         cc_selector_layout.addWidget(self.cc_flip_v_button)
-        
-        self.cc_rotate_l_button = QPushButton("↶")
-        self.cc_rotate_l_button.setToolTip("左旋转色卡选择器")
+
+        self.cc_rotate_l_button = QPushButton(tr("parameter_panel.buttons.rotate_left_symbol"))
+        self.cc_rotate_l_button.setToolTip(tr("parameter_panel.tooltips.rotate_left"))
         self.cc_rotate_l_button.setFixedWidth(30)
         self.cc_rotate_l_button.setVisible(False)
         cc_selector_layout.addWidget(self.cc_rotate_l_button)
-        
-        self.cc_rotate_r_button = QPushButton("↷")
-        self.cc_rotate_r_button.setToolTip("右旋转色卡选择器")
+
+        self.cc_rotate_r_button = QPushButton(tr("parameter_panel.buttons.rotate_right_symbol"))
+        self.cc_rotate_r_button.setToolTip(tr("parameter_panel.tooltips.rotate_right"))
         self.cc_rotate_r_button.setFixedWidth(30)
         self.cc_rotate_r_button.setVisible(False)
         cc_selector_layout.addWidget(self.cc_rotate_r_button)
-        
+
         cc_selector_layout.addStretch()  # 推到左边
-        
+
         # 色卡类型选择下拉菜单
         self.colorchecker_combo = QComboBox()
-        self.colorchecker_combo.setToolTip("选择色卡参考类型")
+        self.colorchecker_combo.setToolTip(tr("parameter_panel.tooltips.colorchecker_selector"))
         self.colorchecker_combo.setVisible(False)
         self.colorchecker_combo.setMinimumWidth(150)
         self._populate_colorchecker_combo()
@@ -262,41 +263,41 @@ class ParameterPanel(QWidget):
         layout.addLayout(cc_selector_layout)
 
         # 读取并保存色卡颜色按钮
-        self.save_colorchecker_colors_button = QPushButton("读取并保存色卡密度")
-        self.save_colorchecker_colors_button.setToolTip("从当前色卡选择器中读取24个色块的平均密度，转换为透过率并保存为JSON文件")
+        self.save_colorchecker_colors_button = QPushButton(tr("parameter_panel.buttons.read_save_density"))
+        self.save_colorchecker_colors_button.setToolTip(tr("parameter_panel.tooltips.read_save_density"))
         self.save_colorchecker_colors_button.setVisible(False)
         self.save_colorchecker_colors_button.setEnabled(False)
         layout.addWidget(self.save_colorchecker_colors_button)
 
         # 光谱锐化（硬件校正）优化配置开关
         spectral_config_layout = QHBoxLayout()
-        self.optimize_idt_checkbox = QCheckBox("优化IDT变换（光源-传感器串扰）")
-        self.optimize_idt_checkbox.setToolTip("优化IDT线性变换基色，消除光源-传感器串扰")
+        self.optimize_idt_checkbox = QCheckBox(tr("parameter_panel.checkboxes.optimize_idt"))
+        self.optimize_idt_checkbox.setToolTip(tr("parameter_panel.tooltips.optimize_idt"))
         self.optimize_idt_checkbox.setChecked(False)  # 默认禁用
         self.optimize_idt_checkbox.setVisible(False)
         spectral_config_layout.addWidget(self.optimize_idt_checkbox)
-        
-        self.optimize_density_matrix_checkbox = QCheckBox("优化数字Mask（密度计-负片串扰）")
-        self.optimize_density_matrix_checkbox.setToolTip("优化数字Mask消除扫描仪-负片染料引入的串扰")
+
+        self.optimize_density_matrix_checkbox = QCheckBox(tr("parameter_panel.checkboxes.optimize_density_matrix"))
+        self.optimize_density_matrix_checkbox.setToolTip(tr("parameter_panel.tooltips.optimize_density_matrix"))
         self.optimize_density_matrix_checkbox.setChecked(False)  # 默认禁用
         self.optimize_density_matrix_checkbox.setVisible(False)
         spectral_config_layout.addWidget(self.optimize_density_matrix_checkbox)
-        
+
         layout.addLayout(spectral_config_layout)
 
-        self.ccm_optimize_button = QPushButton("开始优化")
-        self.ccm_optimize_button.setToolTip("从色卡选择器读取24个颜色并优化参数")
+        self.ccm_optimize_button = QPushButton(tr("parameter_panel.buttons.start_optimization"))
+        self.ccm_optimize_button.setToolTip(tr("parameter_panel.tooltips.optimize_button"))
         self.ccm_optimize_button.setVisible(False)
         self.ccm_optimize_button.setEnabled(False)
         layout.addWidget(self.ccm_optimize_button)
 
-        self.save_input_colorspace_button = QPushButton("保存IDT基色结果")
-        self.save_input_colorspace_button.setToolTip("将当前UCS三角形对应的基色与白点保存为JSON文件")
+        self.save_input_colorspace_button = QPushButton(tr("parameter_panel.buttons.save_idt_result"))
+        self.save_input_colorspace_button.setToolTip(tr("parameter_panel.tooltips.save_idt_result"))
         self.save_input_colorspace_button.setVisible(False)
         layout.addWidget(self.save_input_colorspace_button)
 
-        self.save_matrix_button_afterOpt = QPushButton("保存数字Mask结果")
-        self.save_matrix_button_afterOpt.setToolTip("将当前数字Mask保存到文件")
+        self.save_matrix_button_afterOpt = QPushButton(tr("parameter_panel.buttons.save_digital_mask_result"))
+        self.save_matrix_button_afterOpt.setToolTip(tr("parameter_panel.tooltips.save_mask_result"))
         self.save_matrix_button_afterOpt.setVisible(False)
         layout.addWidget(self.save_matrix_button_afterOpt)
 
@@ -306,24 +307,24 @@ class ParameterPanel(QWidget):
 
     def _create_film_type_group(self) -> QGroupBox:
         """创建胶片类型选择组件"""
-        film_type_group = QGroupBox("胶片类型")
+        film_type_group = QGroupBox(tr("parameter_panel.groups.film_type"))
         film_type_layout = QGridLayout(film_type_group)
-        
+
         self.film_type_combo = QComboBox()
         # Add film type options with Chinese display names and English values
         film_types = [
-            ("彩色负片C41", "color_negative_c41"),
-            ("彩色电影负片ECN2", "color_negative_ecn2"), 
-            ("彩色反转片", "color_reversal"),
-            ("黑白负片", "b&w_negative"),
-            ("黑白反转片", "b&w_reversal"),
-            ("数字", "digital")
+            (tr("parameter_panel.film_types.color_negative_c41"), "color_negative_c41"),
+            (tr("parameter_panel.film_types.color_negative_ecn2"), "color_negative_ecn2"),
+            (tr("parameter_panel.film_types.color_positive"), "color_reversal"),
+            (tr("parameter_panel.film_types.bw_negative"), "b&w_negative"),
+            (tr("parameter_panel.film_types.bw_positive"), "b&w_reversal"),
+            (tr("parameter_panel.film_types.digital"), "digital")
         ]
-        
+
         for display_name, value in film_types:
             self.film_type_combo.addItem(display_name, value)
-        
-        film_type_layout.addWidget(QLabel("胶片类型（TODO）:"), 0, 0)
+
+        film_type_layout.addWidget(QLabel(tr("parameter_panel.labels.film_type_todo")), 0, 0)
         film_type_layout.addWidget(self.film_type_combo, 0, 1, 1, 2)
         
         return film_type_group
@@ -364,7 +365,7 @@ class ParameterPanel(QWidget):
         
         # 处理特殊情况
         if name == "colorchecker_acescg":
-            return "标准色卡 (ACEScg)"
+            return tr("parameter_panel.combo_items.standard_colorchecker_acescg")
         
         # 将下划线替换为空格，首字母大写
         parts = name.split("_")
@@ -389,20 +390,20 @@ class ParameterPanel(QWidget):
             if default_index >= 0:
                 self.colorchecker_combo.setCurrentIndex(default_index)
                 self.selected_colorchecker_file = "original_color_cc24data.json"
-                print("已回滚到默认色卡: original_color_cc24data.json")
+                print(tr("parameter_panel.console_messages.rollback_default"))
             else:
                 # 如果没有默认选择，选择第一个可用的
                 if self.colorchecker_combo.count() > 0:
                     self.colorchecker_combo.setCurrentIndex(0)
                     self.selected_colorchecker_file = self.colorchecker_combo.itemData(0)
-                    print(f"已回滚到第一个可用色卡: {self.selected_colorchecker_file}")
+                    print(tr("parameter_panel.console_messages.rollback_first", filename=self.selected_colorchecker_file))
         except Exception as e:
-            print(f"回滚色卡选择失败: {e}")
+            print(tr("parameter_panel.console_messages.rollback_failed", error=str(e)))
 
     def _create_density_tab(self) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        inversion_group = QGroupBox("密度反相")
+        inversion_group = QGroupBox(tr("parameter_panel.groups.density_inversion"))
         inversion_layout = QGridLayout(inversion_group)
         self.density_gamma_slider = PrecisionSlider(Qt.Orientation.Horizontal)
         self.density_gamma_spinbox = QDoubleSpinBox()
@@ -410,15 +411,15 @@ class ParameterPanel(QWidget):
         self.density_dmax_spinbox = QDoubleSpinBox()
         self._setup_slider_spinbox(self.density_gamma_slider, self.density_gamma_spinbox, 100, 4000, 0.1, 4.0, 0.005)
         self._setup_slider_spinbox(self.density_dmax_slider, self.density_dmax_spinbox, 0, 4800, 0.0, 4.8, 0.005)
-        inversion_layout.addWidget(QLabel("密度反差:"), 0, 0)
+        inversion_layout.addWidget(QLabel(tr("parameter_panel.labels.density_contrast")), 0, 0)
         inversion_layout.addWidget(self.density_gamma_slider, 0, 1)
         inversion_layout.addWidget(self.density_gamma_spinbox, 0, 2)
-        inversion_layout.addWidget(QLabel("最大密度:"), 1, 0)
+        inversion_layout.addWidget(QLabel(tr("parameter_panel.labels.max_density")), 1, 0)
         inversion_layout.addWidget(self.density_dmax_slider, 1, 1)
         inversion_layout.addWidget(self.density_dmax_spinbox, 1, 2)
         layout.addWidget(inversion_group)
 
-        matrix_group = QGroupBox("数字Mask（密度校正矩阵）")
+        matrix_group = QGroupBox(tr("parameter_panel.groups.digital_mask"))
         matrix_layout = QVBoxLayout(matrix_group)
         self.matrix_editor_widgets = []
         matrix_grid = QGridLayout()
@@ -430,21 +431,21 @@ class ParameterPanel(QWidget):
                 matrix_grid.addWidget(spinbox, i, j)
                 row.append(spinbox)
             self.matrix_editor_widgets.append(row)
-        
+
         combo_layout = QHBoxLayout()
-        combo_layout.addWidget(QLabel("预设:"))
+        combo_layout.addWidget(QLabel(tr("parameter_panel.labels.preset")))
         self.matrix_combo = QComboBox()
-        self.matrix_combo.addItem("自定义", "custom")
+        self.matrix_combo.addItem(tr("parameter_panel.combo_items.custom"), "custom")
         available = self.context.the_enlarger.pipeline_processor.get_available_matrices()
         for matrix_id in available:
             data = self.context.the_enlarger.pipeline_processor.get_matrix_data(matrix_id)
             if data: self.matrix_combo.addItem(data.get("name", matrix_id), matrix_id)
         combo_layout.addWidget(self.matrix_combo)
         combo_layout.addStretch()
-        
+
         # 保存矩阵按钮
-        self.save_matrix_button = QPushButton("保存矩阵")
-        self.save_matrix_button.setToolTip("将当前密度矩阵保存到文件")
+        self.save_matrix_button = QPushButton(tr("parameter_panel.buttons.save_matrix"))
+        self.save_matrix_button.setToolTip(tr("parameter_panel.tooltips.save_matrix"))
         combo_layout.addWidget(self.save_matrix_button)
         
         matrix_layout.addLayout(combo_layout)
@@ -452,8 +453,8 @@ class ParameterPanel(QWidget):
 
         # === 矩阵辅助调整控件 ===
         # 添加控制辅助调整显示的复选框
-        self.aesthetic_matrix_adjustment_checkbox = QCheckBox("美学式调整数字Mask")
-        self.aesthetic_matrix_adjustment_checkbox.setToolTip("显示/隐藏矩阵辅助调整按钮")
+        self.aesthetic_matrix_adjustment_checkbox = QCheckBox(tr("parameter_panel.checkboxes.aesthetic_adjustment"))
+        self.aesthetic_matrix_adjustment_checkbox.setToolTip(tr("parameter_panel.tooltips.aesthetic_adjustment"))
         self.aesthetic_matrix_adjustment_checkbox.setChecked(False)  # 默认不显示
         matrix_layout.addWidget(self.aesthetic_matrix_adjustment_checkbox)
 
@@ -474,7 +475,11 @@ class ParameterPanel(QWidget):
         # 保存所有辅助调整相关的控件以便切换可见性
         self.matrix_helper_widgets = []
 
-        channel_names = ["红通道", "绿通道", "蓝通道"]
+        channel_names = {
+            0: tr("parameter_panel.labels.red_channel"),
+            1: tr("parameter_panel.labels.green_channel"),
+            2: tr("parameter_panel.labels.blue_channel")
+        }
 
         for col in range(3):
             # 列标题
@@ -484,7 +489,7 @@ class ParameterPanel(QWidget):
             self.matrix_helper_widgets.append(channel_label)
 
             # 纯度标签
-            purity_label = QLabel("纯度:")
+            purity_label = QLabel(tr("parameter_panel.labels.purity"))
             purity_label.setFixedWidth(35)  # 限制宽度
             purity_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # 右对齐
             helper_grid.addWidget(purity_label, 1, col * 2)
@@ -493,19 +498,19 @@ class ParameterPanel(QWidget):
             # 纯度按钮
             purity_layout = QHBoxLayout()
             purity_layout.setSpacing(2)
-            purity_minus = QPushButton("-")
+            purity_minus = QPushButton(tr("parameter_panel.buttons.purity_decrease"))
             purity_minus.setFixedWidth(30)
-            purity_minus.setToolTip(f"减少{channel_names[col]}纯度（主元素-0.01，辅元素各+0.005）")
-            purity_plus = QPushButton("+")
+            purity_minus.setToolTip(tr("parameter_panel.tooltips.purity_decrease", channel=channel_names[col]))
+            purity_plus = QPushButton(tr("parameter_panel.buttons.purity_increase"))
             purity_plus.setFixedWidth(30)
-            purity_plus.setToolTip(f"增加{channel_names[col]}纯度（主元素+0.01，辅元素各-0.005）")
+            purity_plus.setToolTip(tr("parameter_panel.tooltips.purity_increase", channel=channel_names[col]))
             purity_layout.addWidget(purity_minus)
             purity_layout.addWidget(purity_plus)
             purity_layout.setContentsMargins(0, 0, 0, 0)
             helper_grid.addLayout(purity_layout, 1, col * 2 + 1)
 
             # 色相标签
-            hue_label = QLabel("色相:")
+            hue_label = QLabel(tr("parameter_panel.labels.hue"))
             hue_label.setFixedWidth(35)  # 限制宽度
             hue_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # 右对齐
             helper_grid.addWidget(hue_label, 2, col * 2)
@@ -514,12 +519,12 @@ class ParameterPanel(QWidget):
             # 色相按钮
             hue_layout = QHBoxLayout()
             hue_layout.setSpacing(2)
-            hue_left = QPushButton("<")
+            hue_left = QPushButton(tr("parameter_panel.buttons.hue_left"))
             hue_left.setFixedWidth(30)
-            hue_left.setToolTip(f"{channel_names[col]}色相调整（上辅元素+0.01，下辅元素-0.01）")
-            hue_right = QPushButton(">")
+            hue_left.setToolTip(tr("parameter_panel.tooltips.hue_left", channel=channel_names[col]))
+            hue_right = QPushButton(tr("parameter_panel.buttons.hue_right"))
             hue_right.setFixedWidth(30)
-            hue_right.setToolTip(f"{channel_names[col]}色相调整（下辅元素+0.01，上辅元素-0.01）")
+            hue_right.setToolTip(tr("parameter_panel.tooltips.hue_right", channel=channel_names[col]))
             hue_layout.addWidget(hue_left)
             hue_layout.addWidget(hue_right)
             hue_layout.setContentsMargins(0, 0, 0, 0)
@@ -550,12 +555,12 @@ class ParameterPanel(QWidget):
         layout.addWidget(matrix_group)
 
         # === 分层反差组（新增） ===
-        channel_gamma_group = QGroupBox("分层反差 (Channel Gamma)")
+        channel_gamma_group = QGroupBox(tr("parameter_panel.groups.channel_gamma"))
         channel_gamma_layout = QVBoxLayout(channel_gamma_group)
 
         # R通道
         r_layout = QHBoxLayout()
-        r_layout.addWidget(QLabel("R Gamma:"))
+        r_layout.addWidget(QLabel(tr("parameter_panel.labels.r_gamma")))
         self.channel_gamma_r_slider = QSlider(Qt.Horizontal)
         self.channel_gamma_r_slider.setRange(500, 2000)  # 0.5-2.0, *1000
         self.channel_gamma_r_slider.setValue(1000)       # 默认1.0
@@ -572,7 +577,7 @@ class ParameterPanel(QWidget):
 
         # B通道
         b_layout = QHBoxLayout()
-        b_layout.addWidget(QLabel("B Gamma:"))
+        b_layout.addWidget(QLabel(tr("parameter_panel.labels.b_gamma")))
         self.channel_gamma_b_slider = QSlider(Qt.Horizontal)
         self.channel_gamma_b_slider.setRange(500, 2000)  # 0.5-2.0, *1000
         self.channel_gamma_b_slider.setValue(1000)       # 默认1.0
@@ -588,11 +593,7 @@ class ParameterPanel(QWidget):
         channel_gamma_layout.addLayout(b_layout)
 
         # 添加工具提示
-        channel_gamma_group.setToolTip(
-            "分层反差 - 模拟扫描仪的非线性通道响应\n"
-            "调整R/B通道的密度缩放，G通道固定为1.0\n"
-            "仅在启用密度矩阵时生效"
-        )
+        channel_gamma_group.setToolTip(tr("parameter_panel.tooltips.channel_gamma"))
 
         layout.addWidget(channel_gamma_group)
         layout.addStretch()
@@ -601,7 +602,7 @@ class ParameterPanel(QWidget):
     def _create_rgb_tab(self) -> QWidget:
         widget = QWidget()
         layout = QVBoxLayout(widget)
-        rgb_group = QGroupBox("RGB曝光调整")
+        rgb_group = QGroupBox(tr("parameter_panel.groups.rgb_exposure_adjustment"))
         rgb_layout = QGridLayout(rgb_group)
         self.red_gain_slider = PrecisionSlider(Qt.Orientation.Horizontal)
         self.red_gain_spinbox = QDoubleSpinBox()
@@ -612,11 +613,11 @@ class ParameterPanel(QWidget):
         self._setup_slider_spinbox(self.red_gain_slider, self.red_gain_spinbox, -3000, 3000, -3.0, 3.0, 0.005)
         self._setup_slider_spinbox(self.green_gain_slider, self.green_gain_spinbox, -3000, 3000, -3.0, 3.0, 0.005)
         self._setup_slider_spinbox(self.blue_gain_slider, self.blue_gain_spinbox, -3000, 3000, -3.0, 3.0, 0.005)
-        rgb_layout.addWidget(QLabel("R:"), 0, 0); rgb_layout.addWidget(self.red_gain_slider, 0, 1); rgb_layout.addWidget(self.red_gain_spinbox, 0, 2)
-        rgb_layout.addWidget(QLabel("G:"), 1, 0); rgb_layout.addWidget(self.green_gain_slider, 1, 1); rgb_layout.addWidget(self.green_gain_spinbox, 1, 2)
-        rgb_layout.addWidget(QLabel("B:"), 2, 0); rgb_layout.addWidget(self.blue_gain_slider, 2, 1); rgb_layout.addWidget(self.blue_gain_spinbox, 2, 2)
-        self.auto_color_single_button = QPushButton("AI自动校色（单次）")
-        self.auto_color_multi_button = QPushButton("AI自动校色（多次）")
+        rgb_layout.addWidget(QLabel(tr("parameter_panel.labels.r")), 0, 0); rgb_layout.addWidget(self.red_gain_slider, 0, 1); rgb_layout.addWidget(self.red_gain_spinbox, 0, 2)
+        rgb_layout.addWidget(QLabel(tr("parameter_panel.labels.g")), 1, 0); rgb_layout.addWidget(self.green_gain_slider, 1, 1); rgb_layout.addWidget(self.green_gain_spinbox, 1, 2)
+        rgb_layout.addWidget(QLabel(tr("parameter_panel.labels.b")), 2, 0); rgb_layout.addWidget(self.blue_gain_slider, 2, 1); rgb_layout.addWidget(self.blue_gain_spinbox, 2, 2)
+        self.auto_color_single_button = QPushButton(tr("parameter_panel.buttons.ai_auto_color_single"))
+        self.auto_color_multi_button = QPushButton(tr("parameter_panel.buttons.ai_auto_color_multi"))
         rgb_layout.addWidget(self.auto_color_single_button, 3, 1)
         rgb_layout.addWidget(self.auto_color_multi_button, 3, 2)
 
@@ -630,10 +631,10 @@ class ParameterPanel(QWidget):
         self.pick_neutral_point_button.setIcon(QIcon(str(icon_path)))
         self.pick_neutral_point_button.setIconSize(QSize(20, 20))  # 图标大小
         self.pick_neutral_point_button.setFixedSize(28, 28)  # 按钮固定大小（正方形）
-        self.pick_neutral_point_button.setToolTip("取点：在预览图上选择中性色点")
+        self.pick_neutral_point_button.setToolTip(tr("parameter_panel.tooltips.pick_neutral_point"))
 
         # 应用中性色按钮
-        self.apply_neutral_color_button = QPushButton("应用中性色")
+        self.apply_neutral_color_button = QPushButton(tr("parameter_panel.buttons.apply_neutral_color"))
         self.apply_neutral_color_button.setEnabled(False)  # 初始状态禁用
 
         neutral_button_layout.addWidget(self.pick_neutral_point_button, 0)  # 图标按钮不拉伸
@@ -645,8 +646,8 @@ class ParameterPanel(QWidget):
         self.neutral_white_point_spinbox.setMaximum(7000)
         self.neutral_white_point_spinbox.setSingleStep(100)
         self.neutral_white_point_spinbox.setValue(5500)
-        self.neutral_white_point_spinbox.setSuffix(" K")
-        self.neutral_white_point_spinbox.setToolTip("中性色的色温 (Kelvin)")
+        self.neutral_white_point_spinbox.setSuffix(tr("parameter_panel.suffixes.kelvin"))
+        self.neutral_white_point_spinbox.setToolTip(tr("parameter_panel.tooltips.neutral_color_temp"))
         rgb_layout.addWidget(self.neutral_white_point_spinbox, 4, 2)
         layout.addWidget(rgb_group)
         layout.addStretch()
@@ -659,15 +660,15 @@ class ParameterPanel(QWidget):
         layout.addWidget(self.curve_editor)
         
         # 屏幕反光补偿控件
-        glare_group = QGroupBox("屏幕反光补偿")
+        glare_group = QGroupBox(tr("parameter_panel.groups.screen_glare_compensation"))
         glare_layout = QGridLayout(glare_group)
-        
+
         self.glare_compensation_slider = PrecisionSlider(Qt.Orientation.Horizontal)
         self.glare_compensation_spinbox = QDoubleSpinBox()
         self._setup_slider_spinbox(self.glare_compensation_slider, self.glare_compensation_spinbox, 0, 5000, 0.0, 5.0, 0.005)
-        self.glare_compensation_spinbox.setSuffix("%")
-        
-        glare_layout.addWidget(QLabel("补偿强度:"), 0, 0)
+        self.glare_compensation_spinbox.setSuffix(tr("parameter_panel.suffixes.percent"))
+
+        glare_layout.addWidget(QLabel(tr("parameter_panel.labels.compensation_strength")), 0, 0)
         glare_layout.addWidget(self.glare_compensation_slider, 0, 1)
         glare_layout.addWidget(self.glare_compensation_spinbox, 0, 2)
         
@@ -679,25 +680,25 @@ class ParameterPanel(QWidget):
         layout = QVBoxLayout(widget)
         
         # Proxy尺寸设置组
-        proxy_group = QGroupBox("Proxy设置")
+        proxy_group = QGroupBox(tr("parameter_panel.groups.proxy_settings"))
         proxy_layout = QHBoxLayout(proxy_group)
-        proxy_layout.addWidget(QLabel("Proxy长边尺寸:"))
+        proxy_layout.addWidget(QLabel(tr("parameter_panel.labels.proxy_long_edge")))
         self.proxy_size_spinbox = QSpinBox()
         self.proxy_size_spinbox.setMinimum(500)
         self.proxy_size_spinbox.setMaximum(8000)
         self.proxy_size_spinbox.setValue(2000)
-        self.proxy_size_spinbox.setSuffix(" px")
+        self.proxy_size_spinbox.setSuffix(tr("parameter_panel.suffixes.pixels"))
         self.proxy_size_spinbox.valueChanged.connect(self.proxy_size_changed.emit)
         proxy_layout.addWidget(self.proxy_size_spinbox)
         proxy_layout.addStretch()
         layout.addWidget(proxy_group)
-        
-        pipeline_group = QGroupBox("管线控制")
+
+        pipeline_group = QGroupBox(tr("parameter_panel.tabs.pipeline_control"))
         pipeline_layout = QVBoxLayout(pipeline_group)
-        self.enable_density_inversion_checkbox = QCheckBox("启用密度反相")
-        self.enable_density_matrix_checkbox = QCheckBox("启用密度矩阵")
-        self.enable_rgb_gains_checkbox = QCheckBox("启用RGB增益")
-        self.enable_density_curve_checkbox = QCheckBox("启用密度曲线")
+        self.enable_density_inversion_checkbox = QCheckBox(tr("parameter_panel.checkboxes.enable_density_inversion"))
+        self.enable_density_matrix_checkbox = QCheckBox(tr("parameter_panel.checkboxes.enable_density_matrix"))
+        self.enable_rgb_gains_checkbox = QCheckBox(tr("parameter_panel.checkboxes.enable_rgb_gains"))
+        self.enable_density_curve_checkbox = QCheckBox(tr("parameter_panel.checkboxes.enable_density_curve"))
         pipeline_layout.addWidget(self.enable_density_inversion_checkbox)
         pipeline_layout.addWidget(self.enable_density_matrix_checkbox)
         pipeline_layout.addWidget(self.enable_rgb_gains_checkbox)
@@ -705,52 +706,52 @@ class ParameterPanel(QWidget):
         layout.addWidget(pipeline_group)
 
         # 预览设置组
-        preview_settings_group = QGroupBox("预览设置")
+        preview_settings_group = QGroupBox(tr("parameter_panel.groups.preview_settings"))
         preview_settings_layout = QVBoxLayout(preview_settings_group)
-        self.monochrome_preview_checkbox = QCheckBox("黑白预览")
-        self.monochrome_preview_checkbox.setToolTip("仅影响预览显示，不改变处理管线")
+        self.monochrome_preview_checkbox = QCheckBox(tr("parameter_panel.checkboxes.monochrome_preview"))
+        self.monochrome_preview_checkbox.setToolTip(tr("parameter_panel.tooltips.monochrome_preview"))
         preview_settings_layout.addWidget(self.monochrome_preview_checkbox)
         layout.addWidget(preview_settings_group)
 
         # LUT导出组
-        lut_group = QGroupBox("LUT导出")
+        lut_group = QGroupBox(tr("parameter_panel.groups.lut_export"))
         lut_layout = QVBoxLayout(lut_group)
-        
+
         # 输入设备转换LUT (3D)
         input_lut_layout = QHBoxLayout()
-        input_lut_layout.addWidget(QLabel("输入设备转换LUT (3D):"))
+        input_lut_layout.addWidget(QLabel(tr("parameter_panel.labels.input_device_lut_3d")))
         input_lut_layout.addStretch()
         self.input_lut_size_combo = QComboBox()
         self.input_lut_size_combo.addItems(["16", "32", "64", "128"])
         self.input_lut_size_combo.setCurrentText("64")
         input_lut_layout.addWidget(self.input_lut_size_combo)
-        self.export_input_lut_btn = QPushButton("导出")
+        self.export_input_lut_btn = QPushButton(tr("parameter_panel.buttons.export"))
         self.export_input_lut_btn.clicked.connect(self._on_export_input_lut)
         input_lut_layout.addWidget(self.export_input_lut_btn)
         lut_layout.addLayout(input_lut_layout)
-        
+
         # 反相校色LUT (3D, 不含密度曲线)
         color_lut_layout = QHBoxLayout()
-        color_lut_layout.addWidget(QLabel("反相校色LUT (3D):"))
+        color_lut_layout.addWidget(QLabel(tr("parameter_panel.labels.color_correction_lut_3d")))
         color_lut_layout.addStretch()
         self.color_lut_size_combo = QComboBox()
         self.color_lut_size_combo.addItems(["16", "32", "64", "128"])
         self.color_lut_size_combo.setCurrentText("64")
         color_lut_layout.addWidget(self.color_lut_size_combo)
-        self.export_color_lut_btn = QPushButton("导出")
+        self.export_color_lut_btn = QPushButton(tr("parameter_panel.buttons.export"))
         self.export_color_lut_btn.clicked.connect(self._on_export_color_lut)
         color_lut_layout.addWidget(self.export_color_lut_btn)
         lut_layout.addLayout(color_lut_layout)
-        
+
         # 密度曲线LUT (1D)
         curve_lut_layout = QHBoxLayout()
-        curve_lut_layout.addWidget(QLabel("密度曲线LUT (1D):"))
+        curve_lut_layout.addWidget(QLabel(tr("parameter_panel.labels.density_curve_lut_1d")))
         curve_lut_layout.addStretch()
         self.curve_lut_size_combo = QComboBox()
         self.curve_lut_size_combo.addItems(["2048", "4096", "8192", "16384", "32768", "65536"])
         self.curve_lut_size_combo.setCurrentText("4096")
         curve_lut_layout.addWidget(self.curve_lut_size_combo)
-        self.export_curve_lut_btn = QPushButton("导出")
+        self.export_curve_lut_btn = QPushButton(tr("parameter_panel.buttons.export"))
         self.export_curve_lut_btn.clicked.connect(self._on_export_curve_lut)
         curve_lut_layout.addWidget(self.export_curve_lut_btn)
         lut_layout.addLayout(curve_lut_layout)
@@ -1291,7 +1292,7 @@ class ParameterPanel(QWidget):
             current_matrix_name = self.matrix_combo.currentData() or self.matrix_combo.currentText().strip('*')
             
             # 如果是自定义，则认为是修改的
-            if current_matrix_name in ("custom", "自定义"):
+            if current_matrix_name in ("custom", tr("parameter_panel.combo_items.custom")):
                 return True
                 
             # 获取原始matrix数据
@@ -1389,7 +1390,7 @@ class ParameterPanel(QWidget):
                         self._is_updating_ui = False
                         break
             except Exception as e:
-                print(f"警告：无法同步colorchecker选择: {e}")
+                print(tr("parameter_panel.console_messages.warning_cannot_sync", error=str(e)))
     
     def _set_disabled_tooltips(self, tooltip: str):
         """为禁用的控件设置工具提示"""
@@ -1694,7 +1695,7 @@ class ParameterPanel(QWidget):
     def _on_save_input_colorspace_clicked(self):
         coords_uv = self.ucs_widget.get_uv_coordinates()
         if not all(k in coords_uv for k in ("R", "G", "B")):
-            QMessageBox.warning(self, "警告", "没有可保存的基色坐标。")
+            QMessageBox.warning(self, tr("parameter_panel.dialogs.warning"), tr("parameter_panel.dialogs.no_primaries_to_save"))
             return
             
         primaries = {k: uv_to_xy(*v) for k, v in coords_uv.items()}
@@ -1751,9 +1752,9 @@ class ParameterPanel(QWidget):
             if not is_compatible:
                 # 显示错误对话框
                 QMessageBox.warning(
-                    self, 
-                    "工作空间不兼容", 
-                    error_message or "ColorChecker文件与当前工作空间不兼容"
+                    self,
+                    tr("parameter_panel.dialogs.workspace_incompatible"),
+                    error_message or tr("parameter_panel.dialogs.workspace_incompatible_message")
                 )
                 
                 # 回滚dropdown选择到上一个选项
@@ -1766,8 +1767,8 @@ class ParameterPanel(QWidget):
             # 处理验证过程中的异常
             QMessageBox.warning(
                 self,
-                "验证失败",
-                f"无法验证ColorChecker兼容性: {e}"
+                tr("parameter_panel.dialogs.validation_failed"),
+                tr("parameter_panel.dialogs.validation_failed_message", error=str(e))
             )
             self._rollback_colorchecker_selection()
             return False
@@ -1828,7 +1829,7 @@ class ParameterPanel(QWidget):
         
         # 获取当前矩阵名称
         current_name = self.matrix_combo.currentText().strip('*')
-        if current_name == "自定义":
+        if current_name == tr("parameter_panel.combo_items.custom"):
             current_name = ""
         
         # 发射保存信号
@@ -1841,7 +1842,7 @@ class ParameterPanel(QWidget):
         
         # 清空并重新填充
         self.matrix_combo.clear()
-        self.matrix_combo.addItem("自定义", "custom")
+        self.matrix_combo.addItem(tr("parameter_panel.combo_items.custom"), "custom")
         available = self.context.the_enlarger.pipeline_processor.get_available_matrices()
         for matrix_id in available:
             data = self.context.the_enlarger.pipeline_processor.get_matrix_data(matrix_id)
@@ -2124,7 +2125,7 @@ class ParameterPanel(QWidget):
         """导出输入设备转换LUT"""
         from PySide6.QtWidgets import QFileDialog
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "导出输入设备转换LUT", "", "LUT文件 (*.cube)"
+            self, tr("parameter_panel.dialogs.export_input_lut_title"), "", tr("parameter_panel.dialogs.lut_file_filter")
         )
         if file_path:
             if not file_path.endswith('.cube'):
@@ -2136,7 +2137,7 @@ class ParameterPanel(QWidget):
         """导出反相校色LUT（不含密度曲线）"""
         from PySide6.QtWidgets import QFileDialog
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "导出反相校色LUT", "", "LUT文件 (*.cube)"
+            self, tr("parameter_panel.dialogs.export_color_lut_title"), "", tr("parameter_panel.dialogs.lut_file_filter")
         )
         if file_path:
             if not file_path.endswith('.cube'):
@@ -2148,7 +2149,7 @@ class ParameterPanel(QWidget):
         """导出密度曲线LUT"""
         from PySide6.QtWidgets import QFileDialog
         file_path, _ = QFileDialog.getSaveFileName(
-            self, "导出密度曲线LUT", "", "LUT文件 (*.cube)"
+            self, tr("parameter_panel.dialogs.export_curve_lut_title"), "", tr("parameter_panel.dialogs.lut_file_filter")
         )
         if file_path:
             if not file_path.endswith('.cube'):

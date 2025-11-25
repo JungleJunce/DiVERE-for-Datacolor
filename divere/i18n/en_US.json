@@ -1,0 +1,371 @@
+{
+  "meta": {
+    "language": "English",
+    "language_code": "en_US",
+    "contributors": []
+  },
+  "main_window": {
+    "title": "DiVERE - Digital Color Enlarger",
+    "menu": {
+      "file": "File",
+      "file_open": "Open Image",
+      "file_import_preset": "Import Preset...",
+      "file_import_preset_tooltip": "Import preset from file and apply to current image",
+      "file_export_preset": "Export Preset...",
+      "file_export_preset_tooltip": "Export current parameters as preset file",
+      "file_set_input_color_transform": "Set Input Color Transform",
+      "file_set_working_color_space": "Set Working Color Space",
+      "file_save": "Save Image",
+      "file_save_as": "Save As...",
+      "file_exit": "Exit",
+      "edit": "Edit",
+      "edit_reset_parameters": "Reset Parameters",
+      "view": "View",
+      "view_show_original": "Show Original Image",
+      "view_reset_view": "Reset View",
+      "view_dark_mode": "Dark Mode",
+      "view_language": "Language",
+      "view_language_auto_detect": "Auto-detect System Language",
+      "tools": "Tools",
+      "tools_file_classification_manager": "File Classification Rules Manager",
+      "tools_file_classification_manager_tooltip": "Manage file classification rules and default preset files",
+      "tools_idt_calculator": "Light Source - Sensor Crosstalk Calculator",
+      "tools_idt_calculator_tooltip": "Calculate precise IDT color space through three light source images",
+      "tools_config_manager": "Configuration Manager",
+      "help": "Help",
+      "help_shortcuts": "Keyboard Shortcuts",
+      "help_shortcuts_tooltip": "Show all available keyboard shortcuts",
+      "help_about": "About"
+    },
+    "toolbar": {
+      "open": "Open",
+      "save": "Save",
+      "paste_default": "Paste Default",
+      "copy_as_default": "Copy as Default",
+      "copy_as_default_tooltip": "Save current parameter settings as default for current folder",
+      "apply_contactsheet_settings": "Apply Contact Sheet Settings",
+      "apply_contactsheet_settings_tooltip": "Copy color grading parameters from contact sheet to current crop",
+      "apply_to_contactsheet": "Apply Current Settings to Contact Sheet",
+      "apply_to_contactsheet_tooltip": "Copy color grading parameters from current crop to contact sheet"
+    },
+    "status": {
+      "ready": "Ready",
+      "processing": "Processing...",
+      "loading": "Loading...",
+      "saving": "Saving...",
+      "theme_apply_failed": "Failed to apply theme: {error}"
+    },
+    "dialogs": {
+      "open_image_title": "Open Image File",
+      "open_image_filter": "Image Files (*.jpg *.jpeg *.png *.tiff *.tif *.bmp *.webp *.fff)",
+      "save_image_title": "Save Image",
+      "import_preset_title": "Import Preset",
+      "import_preset_filter": "Preset Files (*.json)",
+      "export_preset_title": "Export Preset",
+      "export_preset_filter": "Preset Files (*.json)",
+      "error": "Error",
+      "warning": "Warning",
+      "info": "Information",
+      "success": "Success",
+      "confirm": "Confirm"
+    }
+  },
+  "parameter_panel": {
+    "tabs": {
+      "input_color": "Input Color Science",
+      "density_matrix": "Density & Matrix",
+      "rgb_exposure": "RGB Exposure",
+      "density_curves": "Density Curves",
+      "pipeline_control": "Pipeline Control"
+    },
+    "groups": {
+      "film_type": "Film Type",
+      "input_color_transform": "Input Color Transform",
+      "spectral_sharpening": "Scanner Spectral Sharpening (Crosstalk Correction)",
+      "colorchecker_selector": "ColorChecker Selector",
+      "density_inversion": "Density Inversion",
+      "digital_mask": "Digital Mask (Density Correction Matrix)",
+      "channel_gamma": "Channel Gamma",
+      "rgb_exposure_adjustment": "RGB Exposure Adjustment",
+      "screen_glare_compensation": "Screen Glare Compensation",
+      "proxy_settings": "Proxy Settings",
+      "preview_settings": "Preview Settings",
+      "lut_export": "LUT Export"
+    },
+    "labels": {
+      "idt_gamma": "IDT Gamma:",
+      "idt_primaries": "IDT Primaries:",
+      "film_type_todo": "Film Type (TODO):",
+      "density_contrast": "Density Contrast:",
+      "max_density": "Maximum Density:",
+      "matrix_preset": "Preset:",
+      "red_channel": "Red Channel",
+      "green_channel": "Green Channel",
+      "blue_channel": "Blue Channel",
+      "purity": "Purity:",
+      "hue": "Hue:",
+      "r_gamma": "R Gamma:",
+      "b_gamma": "B Gamma:",
+      "r": "R:",
+      "g": "G:",
+      "b": "B:",
+      "compensation_strength": "Compensation Strength:",
+      "proxy_long_edge": "Proxy Long Edge Size:",
+      "input_device_lut_3d": "Input Device Transform LUT (3D):",
+      "color_correction_lut_3d": "Inversion Color Correction LUT (3D):",
+      "density_curve_lut_1d": "Density Curve LUT (1D):",
+      "channel": "Channel:",
+      "quality": "Quality:",
+      "saved_curves": "Saved Curves:",
+      "preset": "Preset:"
+    },
+    "buttons": {
+      "reset_linear": "Reset to Linear",
+      "save_curve": "Save Curve",
+      "start_optimization": "Start Optimization",
+      "save_idt_result": "Save IDT Primaries Result",
+      "save_digital_mask_result": "Save Digital Mask Result",
+      "flip_horizontal_symbol": "↔",
+      "flip_vertical_symbol": "↕",
+      "rotate_left_symbol": "↶",
+      "rotate_right_symbol": "↷",
+      "read_save_density": "Read and Save ColorChecker Density",
+      "save_matrix": "Save Matrix",
+      "select_all": "Select All",
+      "deselect_all": "Deselect All",
+      "default_selection": "Default Selection",
+      "purity_decrease": "-",
+      "purity_increase": "+",
+      "hue_left": "<",
+      "hue_right": ">",
+      "ai_auto_color_single": "AI Auto Color (Single)",
+      "ai_auto_color_multi": "AI Auto Color (Multiple)",
+      "apply_neutral_color": "Apply Neutral Color",
+      "export": "Export"
+    },
+    "tooltips": {
+      "pick_neutral_point": "Pick Point: Select neutral color point on preview",
+      "neutral_color_temp": "Neutral color temperature (Kelvin)",
+      "channel_gamma": "Channel Gamma - Simulates scanner's non-linear channel response\nAdjusts density scaling for R/B channels, G channel fixed at 1.0\nOnly effective when density matrix is enabled",
+      "save_matrix": "Save current density matrix to file",
+      "aesthetic_adjustment": "Show/hide matrix adjustment helper buttons",
+      "purity_decrease": "Decrease {channel} purity (main element -0.01, aux elements +0.005 each)",
+      "purity_increase": "Increase {channel} purity (main element +0.01, aux elements -0.005 each)",
+      "hue_left": "{channel} hue adjustment (upper aux +0.01, lower aux -0.01)",
+      "hue_right": "{channel} hue adjustment (lower aux +0.01, upper aux -0.01)",
+      "monochrome_preview": "Only affects preview display, does not change processing pipeline",
+      "colorchecker_selector": "Select ColorChecker reference type",
+      "flip_horizontal": "Flip ColorChecker selector horizontally",
+      "flip_vertical": "Flip ColorChecker selector vertically",
+      "rotate_left": "Rotate ColorChecker selector left",
+      "rotate_right": "Rotate ColorChecker selector right",
+      "optimize_button": "Read 24 colors from ColorChecker selector and optimize parameters",
+      "save_idt_result": "Save primaries and white point corresponding to current UCS triangle as JSON file",
+      "save_mask_result": "Save current digital mask to file",
+      "read_save_density": "Read average density of 24 patches from ColorChecker selector, convert to transmittance and save as JSON file",
+      "optimize_idt": "Optimize IDT linear transform primaries to eliminate light source-sensor crosstalk",
+      "optimize_density_matrix": "Optimize digital mask to eliminate crosstalk introduced by scanner-negative dyes"
+    },
+    "checkboxes": {
+      "spectral_sharpening": "Scanner Spectral Sharpening (Crosstalk Correction)",
+      "colorchecker_selector": "ColorChecker Selector",
+      "optimize_idt": "Optimize IDT Transform (Light Source-Sensor Crosstalk)",
+      "optimize_density_matrix": "Optimize Digital Mask (Densitometer-Negative Crosstalk)",
+      "aesthetic_adjustment": "Aesthetic Digital Mask Adjustment",
+      "enable_density_inversion": "Enable Density Inversion",
+      "enable_density_matrix": "Enable Density Matrix",
+      "enable_rgb_gains": "Enable RGB Gains",
+      "enable_density_curve": "Enable Density Curve",
+      "monochrome_preview": "Monochrome Preview",
+      "include_density_curve": "Include Density Curve Adjustments"
+    },
+    "film_types": {
+      "color_negative_c41": "Color Negative C41",
+      "color_negative_ecn2": "Color Motion Picture Negative ECN2",
+      "color_positive": "Color Reversal",
+      "bw_negative": "B&W Negative",
+      "bw_positive": "B&W Reversal",
+      "digital": "Digital"
+    },
+    "color_channels": {
+      "red": "Red",
+      "green": "Green",
+      "blue": "Blue",
+      "rgb": "RGB"
+    },
+    "combo_items": {
+      "custom": "Custom",
+      "standard_colorchecker_acescg": "Standard ColorChecker (ACEScg)"
+    },
+    "dialogs": {
+      "warning": "Warning",
+      "no_primaries_to_save": "No primaries coordinates to save.",
+      "workspace_incompatible": "Workspace Incompatible",
+      "workspace_incompatible_message": "ColorChecker file is incompatible with current workspace",
+      "validation_failed": "Validation Failed",
+      "validation_failed_message": "Unable to validate ColorChecker compatibility: {error}",
+      "export_input_lut_title": "Export Input Device Transform LUT",
+      "export_color_lut_title": "Export Inversion Color Correction LUT",
+      "export_curve_lut_title": "Export Density Curve LUT",
+      "lut_file_filter": "LUT Files (*.cube)"
+    },
+    "console_messages": {
+      "rollback_default": "Rolled back to default ColorChecker: original_color_cc24data.json",
+      "rollback_first": "Rolled back to first available ColorChecker: {filename}",
+      "rollback_failed": "Failed to rollback ColorChecker selection: {error}",
+      "warning_cannot_sync": "Warning: Unable to sync ColorChecker selection: {error}"
+    },
+    "suffixes": {
+      "kelvin": " K",
+      "pixels": " px",
+      "percent": "%"
+    }
+  },
+  "curve_editor": {
+    "title": "Density Curve Editor",
+    "axis": {
+      "input_density": "Input Density",
+      "sdr_ev": "SDR EV Value"
+    },
+    "channel_label": "Channel:",
+    "saved_curves_label": "Saved Curves:",
+    "button_reset_linear": "Reset to Linear",
+    "button_save_curve": "Save Curve",
+    "usage_hint": "Usage: Left-click to add/select control points, drag to move, right-click to delete, Delete key to remove selected point",
+    "dialogs": {
+      "save_curve_title": "Save Curve",
+      "curve_name_prompt": "Enter curve name:",
+      "curve_description_prompt": "Enter curve description (optional):",
+      "success_title": "Success",
+      "error_title": "Error",
+      "save_success_message": "Curve saved to:\n{file_path}",
+      "save_error_message": "Error saving curve:\n{error}"
+    }
+  },
+  "save_dialog": {
+    "title": "Save Image Settings",
+    "groups": {
+      "save_settings": "Save Settings",
+      "file_format": "File Format",
+      "color_management": "Output Color Management",
+      "jpeg_quality": "JPEG Quality",
+      "processing_options": "Processing Options",
+      "batch_export": "Batch Export Selection"
+    },
+    "format_16bit_tiff": "16-bit TIFF (Recommended)",
+    "format_8bit_jpeg": "8-bit JPEG",
+    "output_color_space_label": "Output Color Space (embedded ICC):",
+    "quality_label": "Quality:",
+    "include_density_curves": "Include Density Curve Adjustments",
+    "button_save_single": "Save Single",
+    "button_save_all": "Save All",
+    "button_select_all": "Select All",
+    "button_deselect_all": "Deselect All",
+    "button_default_selection": "Default Selection",
+    "batch_files_label": "Select files to export (based on divere_presets.json in current folder):",
+    "table_headers": {
+      "file": "File",
+      "type": "Type"
+    }
+  },
+  "cmaes_dialog": {
+    "title": "Spectral Sharpening (Hardware Calibration) Optimization Progress",
+    "message": "Optimizing spectral sharpening (hardware calibration) parameters based on ColorChecker...",
+    "groups": {
+      "progress": "Optimization Progress",
+      "detailed_log": "Detailed Log"
+    },
+    "iteration_label": "Iteration: {current} / {total}",
+    "current_rmse_label": "Current log-RMSE: {value}",
+    "best_rmse_label": "Best log-RMSE: {value}",
+    "button_cancel": "Cancel",
+    "button_close": "Close",
+    "messages": {
+      "starting": "Starting CMA-ES optimization...",
+      "success": "✓ Optimization completed successfully! Final log-RMSE: {final_log_rmse:.6f}",
+      "failed": "✗ Optimization failed or was cancelled",
+      "confirm_cancel": "Optimization is in progress, are you sure you want to cancel?"
+    }
+  },
+  "shortcut_help_dialog": {
+    "title": "Keyboard Shortcuts Reference",
+    "main_title": "DiVERE Keyboard Shortcuts Reference",
+    "search_label": "Search:",
+    "search_placeholder": "Enter shortcut key or function name to search...",
+    "table_headers": {
+      "shortcut": "Shortcut",
+      "function": "Function",
+      "description": "Description"
+    },
+    "detail_section_title": "Detailed Description",
+    "button_print": "Print Reference Card",
+    "button_close": "Close"
+  },
+  "config_manager_dialog": {
+    "title": "Configuration Manager",
+    "panel_title": "DiVERE Configuration Manager",
+    "user_config_dir_label": "User Configuration Directory: {path}",
+    "tabs": {
+      "colorspaces": "Color Spaces",
+      "curves": "Curves",
+      "matrices": "Matrices",
+      "app_settings": "Application Settings"
+    },
+    "buttons": {
+      "open_config_dir": "Open Config Directory",
+      "backup_config": "Backup Configuration",
+      "close": "Close",
+      "add_config": "Add Configuration",
+      "copy_builtin": "Copy Built-in Configuration",
+      "delete_config": "Delete Configuration",
+      "save_config": "Save Configuration",
+      "add_curve": "Add Curve",
+      "copy_builtin_curve": "Copy Built-in Curve",
+      "delete_curve": "Delete Curve",
+      "save_curve": "Save Curve"
+    }
+  },
+  "shortcuts": {
+    "status_messages": {
+      "switching_prev": "⏳Switching to previous photo...",
+      "switched_prev": "Switched to previous photo",
+      "switching_next": "⏳Switching to next photo...",
+      "switched_next": "Switched to next photo",
+      "rotate_left": "Rotated 90° Left",
+      "rotate_right": "Rotated 90° Right",
+      "parameters_reset": "Parameters reset",
+      "set_as_folder_default": "Set as folder default",
+      "r_channel": "R Channel: {value:.3f}",
+      "b_channel": "B Channel: {value:.3f}",
+      "max_density": "Max Density: {value:.3f}",
+      "density_contrast": "Density Contrast: {value:.3f}",
+      "r_gamma_warm": "R Gamma: {value:.3f} (highlights warmer)",
+      "r_gamma_cool": "R Gamma: {value:.3f} (highlights cooler)",
+      "b_gamma_warm": "B Gamma: {value:.3f} (highlights bluer)",
+      "b_gamma_cool": "B Gamma: {value:.3f} (highlights yellower)"
+    }
+  },
+  "common": {
+    "ok": "OK",
+    "cancel": "Cancel",
+    "yes": "Yes",
+    "no": "No",
+    "close": "Close",
+    "save": "Save",
+    "open": "Open",
+    "apply": "Apply",
+    "reset": "Reset",
+    "delete": "Delete",
+    "add": "Add",
+    "edit": "Edit",
+    "copy": "Copy",
+    "paste": "Paste",
+    "search": "Search",
+    "loading": "Loading...",
+    "processing": "Processing...",
+    "success": "Success",
+    "error": "Error",
+    "warning": "Warning",
+    "info": "Information"
+  }
+}

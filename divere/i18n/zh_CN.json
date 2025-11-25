@@ -1,0 +1,371 @@
+{
+  "meta": {
+    "language": "简体中文",
+    "language_code": "zh_CN",
+    "contributors": []
+  },
+  "main_window": {
+    "title": "DiVERE - 数字彩色放大机",
+    "menu": {
+      "file": "文件",
+      "file_open": "打开图像",
+      "file_import_preset": "导入预设...",
+      "file_import_preset_tooltip": "从文件导入预设并应用到当前图像",
+      "file_export_preset": "导出预设...",
+      "file_export_preset_tooltip": "将当前参数导出为预设文件",
+      "file_set_input_color_transform": "设置输入色彩变换",
+      "file_set_working_color_space": "设置工作色彩空间",
+      "file_save": "保存图像",
+      "file_save_as": "另存为...",
+      "file_exit": "退出",
+      "edit": "编辑",
+      "edit_reset_parameters": "重置参数",
+      "view": "视图",
+      "view_show_original": "显示原始图像",
+      "view_reset_view": "重置视图",
+      "view_dark_mode": "暗黑模式",
+      "view_language": "语言",
+      "view_language_auto_detect": "自动检测系统语言",
+      "tools": "工具",
+      "tools_file_classification_manager": "文件分类规则管理器",
+      "tools_file_classification_manager_tooltip": "管理文件分类规则和默认预设文件",
+      "tools_idt_calculator": "光源-传感器串扰计算工具",
+      "tools_idt_calculator_tooltip": "通过三张光源图片计算精确的IDT色彩空间",
+      "tools_config_manager": "配置管理器",
+      "help": "帮助",
+      "help_shortcuts": "快捷键参考",
+      "help_shortcuts_tooltip": "显示所有可用的键盘快捷键",
+      "help_about": "关于"
+    },
+    "toolbar": {
+      "open": "打开",
+      "save": "保存",
+      "paste_default": "粘贴默认",
+      "copy_as_default": "复制为默认",
+      "copy_as_default_tooltip": "将当前参数设置保存为当前文件夹的默认设置",
+      "apply_contactsheet_settings": "沿用接触印相设置",
+      "apply_contactsheet_settings_tooltip": "将接触印相的调色参数复制到当前裁剪",
+      "apply_to_contactsheet": "应用当前设置到接触印相",
+      "apply_to_contactsheet_tooltip": "将当前裁剪的调色参数复制到接触印相"
+    },
+    "status": {
+      "ready": "就绪",
+      "processing": "处理中...",
+      "loading": "加载中...",
+      "saving": "保存中...",
+      "theme_apply_failed": "应用主题失败: {error}"
+    },
+    "dialogs": {
+      "open_image_title": "打开图像文件",
+      "open_image_filter": "图像文件 (*.jpg *.jpeg *.png *.tiff *.tif *.bmp *.webp *.fff)",
+      "save_image_title": "保存图像",
+      "import_preset_title": "导入预设",
+      "import_preset_filter": "预设文件 (*.json)",
+      "export_preset_title": "导出预设",
+      "export_preset_filter": "预设文件 (*.json)",
+      "error": "错误",
+      "warning": "警告",
+      "info": "提示",
+      "success": "成功",
+      "confirm": "确认"
+    }
+  },
+  "parameter_panel": {
+    "tabs": {
+      "input_color": "输入色彩科学",
+      "density_matrix": "密度与矩阵",
+      "rgb_exposure": "RGB曝光",
+      "density_curves": "密度曲线",
+      "pipeline_control": "管线控制"
+    },
+    "groups": {
+      "film_type": "胶片类型",
+      "input_color_transform": "输入色彩变换",
+      "spectral_sharpening": "扫描仪光谱锐化（串扰校正）",
+      "colorchecker_selector": "色卡选择器",
+      "density_inversion": "密度反相",
+      "digital_mask": "数字Mask（密度校正矩阵）",
+      "channel_gamma": "分层反差 (Channel Gamma)",
+      "rgb_exposure_adjustment": "RGB曝光调整",
+      "screen_glare_compensation": "屏幕反光补偿",
+      "proxy_settings": "Proxy设置",
+      "preview_settings": "预览设置",
+      "lut_export": "LUT导出"
+    },
+    "labels": {
+      "idt_gamma": "IDT Gamma:",
+      "idt_primaries": "IDT 基色:",
+      "film_type_todo": "胶片类型（TODO）:",
+      "density_contrast": "密度反差:",
+      "max_density": "最大密度:",
+      "matrix_preset": "预设:",
+      "red_channel": "红通道",
+      "green_channel": "绿通道",
+      "blue_channel": "蓝通道",
+      "purity": "纯度:",
+      "hue": "色相:",
+      "r_gamma": "R Gamma:",
+      "b_gamma": "B Gamma:",
+      "r": "R:",
+      "g": "G:",
+      "b": "B:",
+      "compensation_strength": "补偿强度:",
+      "proxy_long_edge": "Proxy长边尺寸:",
+      "input_device_lut_3d": "输入设备转换LUT (3D):",
+      "color_correction_lut_3d": "反相校色LUT (3D):",
+      "density_curve_lut_1d": "密度曲线LUT (1D):",
+      "channel": "通道:",
+      "quality": "质量:",
+      "saved_curves": "已保存曲线:",
+      "preset": "预设:"
+    },
+    "buttons": {
+      "reset_linear": "重置为线性",
+      "save_curve": "保存曲线",
+      "start_optimization": "开始优化",
+      "save_idt_result": "保存IDT基色结果",
+      "save_digital_mask_result": "保存数字Mask结果",
+      "flip_horizontal_symbol": "↔",
+      "flip_vertical_symbol": "↕",
+      "rotate_left_symbol": "↶",
+      "rotate_right_symbol": "↷",
+      "read_save_density": "读取并保存色卡密度",
+      "save_matrix": "保存矩阵",
+      "select_all": "全选",
+      "deselect_all": "全不选",
+      "default_selection": "默认选择",
+      "purity_decrease": "-",
+      "purity_increase": "+",
+      "hue_left": "<",
+      "hue_right": ">",
+      "ai_auto_color_single": "AI自动校色（单次）",
+      "ai_auto_color_multi": "AI自动校色（多次）",
+      "apply_neutral_color": "应用中性色",
+      "export": "导出"
+    },
+    "tooltips": {
+      "pick_neutral_point": "取点：在预览图上选择中性色点",
+      "neutral_color_temp": "中性色的色温 (Kelvin)",
+      "channel_gamma": "分层反差 - 模拟扫描仪的非线性通道响应\n调整R/B通道的密度缩放，G通道固定为1.0\n仅在启用密度矩阵时生效",
+      "save_matrix": "将当前密度矩阵保存到文件",
+      "aesthetic_adjustment": "显示/隐藏矩阵辅助调整按钮",
+      "purity_decrease": "减少{channel}纯度（主元素-0.01，辅元素各+0.005）",
+      "purity_increase": "增加{channel}纯度（主元素+0.01，辅元素各-0.005）",
+      "hue_left": "{channel}色相调整（上辅元素+0.01，下辅元素-0.01）",
+      "hue_right": "{channel}色相调整（下辅元素+0.01，上辅元素-0.01）",
+      "monochrome_preview": "仅影响预览显示，不改变处理管线",
+      "colorchecker_selector": "选择色卡参考类型",
+      "flip_horizontal": "水平翻转色卡选择器",
+      "flip_vertical": "竖直翻转色卡选择器",
+      "rotate_left": "左旋转色卡选择器",
+      "rotate_right": "右旋转色卡选择器",
+      "optimize_button": "从色卡选择器读取24个颜色并优化参数",
+      "save_idt_result": "将当前UCS三角形对应的基色与白点保存为JSON文件",
+      "save_mask_result": "将当前数字Mask保存到文件",
+      "read_save_density": "从当前色卡选择器中读取24个色块的平均密度，转换为透过率并保存为JSON文件",
+      "optimize_idt": "优化IDT线性变换基色，消除光源-传感器串扰",
+      "optimize_density_matrix": "优化数字Mask消除扫描仪-负片染料引入的串扰"
+    },
+    "checkboxes": {
+      "spectral_sharpening": "扫描仪光谱锐化（串扰校正）",
+      "colorchecker_selector": "色卡选择器",
+      "optimize_idt": "优化IDT变换（光源-传感器串扰）",
+      "optimize_density_matrix": "优化数字Mask（密度计-负片串扰）",
+      "aesthetic_adjustment": "美学式调整数字Mask",
+      "enable_density_inversion": "启用密度反相",
+      "enable_density_matrix": "启用密度矩阵",
+      "enable_rgb_gains": "启用RGB增益",
+      "enable_density_curve": "启用密度曲线",
+      "monochrome_preview": "黑白预览",
+      "include_density_curve": "包含密度曲线调整"
+    },
+    "film_types": {
+      "color_negative_c41": "彩色负片C41",
+      "color_negative_ecn2": "彩色电影负片ECN2",
+      "color_positive": "彩色反转片",
+      "bw_negative": "黑白负片",
+      "bw_positive": "黑白反转片",
+      "digital": "数字"
+    },
+    "color_channels": {
+      "red": "红",
+      "green": "绿",
+      "blue": "蓝",
+      "rgb": "RGB"
+    },
+    "combo_items": {
+      "custom": "自定义",
+      "standard_colorchecker_acescg": "标准色卡 (ACEScg)"
+    },
+    "dialogs": {
+      "warning": "警告",
+      "no_primaries_to_save": "没有可保存的基色坐标。",
+      "workspace_incompatible": "工作空间不兼容",
+      "workspace_incompatible_message": "ColorChecker文件与当前工作空间不兼容",
+      "validation_failed": "验证失败",
+      "validation_failed_message": "无法验证ColorChecker兼容性: {error}",
+      "export_input_lut_title": "导出输入设备转换LUT",
+      "export_color_lut_title": "导出反相校色LUT",
+      "export_curve_lut_title": "导出密度曲线LUT",
+      "lut_file_filter": "LUT文件 (*.cube)"
+    },
+    "console_messages": {
+      "rollback_default": "已回滚到默认色卡: original_color_cc24data.json",
+      "rollback_first": "已回滚到第一个可用色卡: {filename}",
+      "rollback_failed": "回滚色卡选择失败: {error}",
+      "warning_cannot_sync": "警告：无法同步colorchecker选择: {error}"
+    },
+    "suffixes": {
+      "kelvin": " K",
+      "pixels": " px",
+      "percent": "%"
+    }
+  },
+  "curve_editor": {
+    "title": "密度曲线编辑器",
+    "axis": {
+      "input_density": "输入密度",
+      "sdr_ev": "SDR EV值"
+    },
+    "channel_label": "通道:",
+    "saved_curves_label": "已保存曲线:",
+    "button_reset_linear": "重置为线性",
+    "button_save_curve": "保存曲线",
+    "usage_hint": "使用说明：左键点击添加/选择控制点，拖拽移动点，右键删除点，Delete键删除选中点",
+    "dialogs": {
+      "save_curve_title": "保存曲线",
+      "curve_name_prompt": "请输入曲线名称:",
+      "curve_description_prompt": "请输入曲线描述（可选）:",
+      "success_title": "成功",
+      "error_title": "错误",
+      "save_success_message": "曲线已保存到：\n{file_path}",
+      "save_error_message": "保存曲线时出错：\n{error}"
+    }
+  },
+  "save_dialog": {
+    "title": "保存图像设置",
+    "groups": {
+      "save_settings": "保存设置",
+      "file_format": "文件格式",
+      "color_management": "输出色彩管理",
+      "jpeg_quality": "JPEG质量",
+      "processing_options": "处理选项",
+      "batch_export": "批量导出选择"
+    },
+    "format_16bit_tiff": "16-bit TIFF (推荐)",
+    "format_8bit_jpeg": "8-bit JPEG",
+    "output_color_space_label": "输出色彩空间（内嵌icc）:",
+    "quality_label": "质量:",
+    "include_density_curves": "包含密度曲线调整",
+    "button_save_single": "保存单张",
+    "button_save_all": "保存所有",
+    "button_select_all": "全选",
+    "button_deselect_all": "全不选",
+    "button_default_selection": "默认选择",
+    "batch_files_label": "选择要导出的文件（基于当前文件夹的divere_presets.json）:",
+    "table_headers": {
+      "file": "文件",
+      "type": "类型"
+    }
+  },
+  "cmaes_dialog": {
+    "title": "光谱锐化（硬件校正）优化进度",
+    "message": "正在根据色卡优化光谱锐化（硬件校正）参数...",
+    "groups": {
+      "progress": "优化进度",
+      "detailed_log": "详细日志"
+    },
+    "iteration_label": "迭代: {current} / {total}",
+    "current_rmse_label": "当前 log-RMSE: {value}",
+    "best_rmse_label": "最佳 log-RMSE: {value}",
+    "button_cancel": "取消",
+    "button_close": "关闭",
+    "messages": {
+      "starting": "开始CMA-ES优化...",
+      "success": "✓ 优化成功完成！最终 log-RMSE: {final_log_rmse:.6f}",
+      "failed": "✗ 优化失败或被取消",
+      "confirm_cancel": "优化正在进行中，确定要取消吗？"
+    }
+  },
+  "shortcut_help_dialog": {
+    "title": "快捷键参考",
+    "main_title": "DiVERE 快捷键参考",
+    "search_label": "搜索:",
+    "search_placeholder": "输入快捷键或功能名称进行搜索...",
+    "table_headers": {
+      "shortcut": "快捷键",
+      "function": "功能",
+      "description": "说明"
+    },
+    "detail_section_title": "详细说明",
+    "button_print": "打印参考卡",
+    "button_close": "关闭"
+  },
+  "config_manager_dialog": {
+    "title": "配置管理器",
+    "panel_title": "DiVERE 配置管理器",
+    "user_config_dir_label": "用户配置目录: {path}",
+    "tabs": {
+      "colorspaces": "色彩空间",
+      "curves": "曲线",
+      "matrices": "矩阵",
+      "app_settings": "应用设置"
+    },
+    "buttons": {
+      "open_config_dir": "打开配置目录",
+      "backup_config": "备份配置",
+      "close": "关闭",
+      "add_config": "添加配置",
+      "copy_builtin": "复制内置配置",
+      "delete_config": "删除配置",
+      "save_config": "保存配置",
+      "add_curve": "添加曲线",
+      "copy_builtin_curve": "复制内置曲线",
+      "delete_curve": "删除曲线",
+      "save_curve": "保存曲线"
+    }
+  },
+  "shortcuts": {
+    "status_messages": {
+      "switching_prev": "⏳正在切换到上一张照片...",
+      "switched_prev": "已切换到上一张照片",
+      "switching_next": "⏳正在切换到下一张照片...",
+      "switched_next": "已切换到下一张照片",
+      "rotate_left": "左旋转 90°",
+      "rotate_right": "右旋转 90°",
+      "parameters_reset": "参数已重置",
+      "set_as_folder_default": "已设为文件夹默认",
+      "r_channel": "R通道: {value:.3f}",
+      "b_channel": "B通道: {value:.3f}",
+      "max_density": "最大密度: {value:.3f}",
+      "density_contrast": "密度反差: {value:.3f}",
+      "r_gamma_warm": "R Gamma: {value:.3f} (亮部变红)",
+      "r_gamma_cool": "R Gamma: {value:.3f} (亮部变青)",
+      "b_gamma_warm": "B Gamma: {value:.3f} (亮部变蓝)",
+      "b_gamma_cool": "B Gamma: {value:.3f} (亮部变黄)"
+    }
+  },
+  "common": {
+    "ok": "确定",
+    "cancel": "取消",
+    "yes": "是",
+    "no": "否",
+    "close": "关闭",
+    "save": "保存",
+    "open": "打开",
+    "apply": "应用",
+    "reset": "重置",
+    "delete": "删除",
+    "add": "添加",
+    "edit": "编辑",
+    "copy": "复制",
+    "paste": "粘贴",
+    "search": "搜索",
+    "loading": "加载中...",
+    "processing": "处理中...",
+    "success": "成功",
+    "error": "错误",
+    "warning": "警告",
+    "info": "提示"
+  }
+}

@@ -17,7 +17,8 @@
     "proxy_max_size": 1500,
     "use_process_isolation": "auto",
     "worker_memory_threshold_mb": 4000,
-    "theme": "dark"
+    "theme": "dark",
+    "language": "en_US"
   },
   "defaults": {
     "input_color_space": "sRGB",

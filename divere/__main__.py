@@ -56,6 +56,7 @@ from PySide6.QtCore import Qt
 import multiprocessing
 
 from divere.ui.main_window import MainWindow
+from divere.i18n import initialize_language
 
 
 def main():
@@ -92,10 +93,13 @@ def main():
     except ImportError:
         app.setApplicationVersion("0.1.27")
     app.setOrganizationName("DiVERE Team")
-    
+
     # 设置应用程序图标（如果有的话）
     # app.setWindowIcon(QIcon("icons/app_icon.png"))
-    
+
+    # 初始化多语言支持（在创建UI之前）
+    initialize_language()
+
     # 创建主窗口
     window = MainWindow()
     window.show()
