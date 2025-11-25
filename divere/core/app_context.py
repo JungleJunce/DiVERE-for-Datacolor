@@ -14,6 +14,7 @@ from .folder_navigator import FolderNavigator
 from ..utils.auto_preset_manager import AutoPresetManager
 from ..utils.enhanced_config_manager import enhanced_config_manager
 from . import color_science
+from ..i18n import tr
 
 
 class _PreviewWorkerSignals(QObject):
@@ -293,7 +294,7 @@ class ApplicationContext(QObject):
             
             if preset:
                 self.load_preset(preset)
-                self.status_message_changed.emit(f"已应用智能分类默认设置")
+                self.status_message_changed.emit(tr("app_context.preset_messages.auto_classification_applied"))
             else:
                 # 回退到通用默认
                 self._load_generic_default_preset()
@@ -301,7 +302,7 @@ class ApplicationContext(QObject):
         except Exception as e:
             # 回退到通用默认
             self._load_generic_default_preset()
-            self.status_message_changed.emit(f"智能分类失败，已应用通用默认设置: {e}")
+            self.status_message_changed.emit(tr("app_context.preset_messages.auto_classification_failed", error=e))
     
     def _load_generic_default_preset(self):
         """加载通用默认预设"""
@@ -838,7 +839,7 @@ class ApplicationContext(QObject):
     def load_image(self, file_path: str):
         try:
             self._loading_image = True  # 设置加载标志，延迟预览更新
-            self.status_message_changed.emit(f"正在加载图像: {file_path}...")
+            self.status_message_changed.emit(tr("app_context.image_loading.loading_image", file_path=file_path))
 
             # 1. 根据内存报告决定是轻量清理还是重度清理
             try:
@@ -899,7 +900,7 @@ class ApplicationContext(QObject):
                 
                 print(f"[ApplicationContext] 检测到{self._current_image.original_channels}通道图像，自动切换为{target_film_type}")
                 self.set_current_film_type(target_film_type, apply_defaults=True)
-                self.status_message_changed.emit(f"检测到单色图像，已自动切换为黑白模式")
+                self.status_message_changed.emit(tr("app_context.image_loading.monochrome_detected"))
             
             # 重置裁剪（orientation延迟重置，让预设系统先处理）
             self._contactsheet_profile.crop_rect = None
@@ -913,13 +914,13 @@ class ApplicationContext(QObject):
             bundle = self.auto_preset_manager.get_bundle_for_image(file_path)
             if bundle:
                 self.load_preset_bundle(bundle)
-                self.status_message_changed.emit("已为图像加载自动预设（Bundle）")
+                self.status_message_changed.emit(tr("app_context.preset_messages.auto_preset_bundle_loaded"))
                 # Bundle内部已触发预览；此处不再重复
             else:
                 preset = self.auto_preset_manager.get_preset_for_image(file_path)
                 if preset:
                     self.load_preset(preset)
-                    self.status_message_changed.emit(f"已为图像加载自动预设: {preset.name}")
+                    self.status_message_changed.emit(tr("app_context.preset_messages.auto_preset_loaded", name=preset.name))
                     
                     # NOTE: Do not apply film type overrides when loading presets from file
                     # The preset's values should be preserved as-is
@@ -938,10 +939,10 @@ class ApplicationContext(QObject):
                         # 智能分类失败时，回退到通用默认
                         try:
                             self._load_generic_default_preset()
-                            self.status_message_changed.emit("未找到预设，已应用通用默认预设")
+                            self.status_message_changed.emit(tr("app_context.preset_messages.preset_not_found_default"))
                         except Exception:
                             self.reset_params()
-                            self.status_message_changed.emit("未找到预设，已应用默认参数（回退）")
+                            self.status_message_changed.emit(tr("app_context.preset_messages.preset_not_found_fallback"))
 
 
             # 清除加载标志并触发最终预览更新
@@ -962,7 +963,7 @@ class ApplicationContext(QObject):
             self._loading_image = False  # 确保异常情况下也清除标志
             import traceback
             print(traceback.format_exc())
-            self.status_message_changed.emit(f"无法加载图像: {e}")
+            self.status_message_changed.emit(tr("app_context.image_loading.load_image_failed", error=e))
 
     def load_preset(self, preset: Preset, preserve_film_type: bool = False):
         """从Preset对象加载状态 - 使用新的CropInstance模型
@@ -1370,7 +1371,7 @@ class ApplicationContext(QObject):
         if self._current_image:
             print("[DEBUG] Trigger for preview_update: convert_to_black_and_white_mode()"); self._trigger_preview_update()  # 只是参数修改，不需要prepare_proxy
 
-        self.status_message_changed.emit(f"已转换为黑白模式: {self.film_type_controller.get_film_type_display_name(new_film_type)}")
+        self.status_message_changed.emit(tr("app_context.image_loading.converted_to_bw", film_type=self.film_type_controller.get_film_type_display_name(new_film_type)))
     
     def get_current_film_type(self) -> str:
         """获取当前胶片类型"""
@@ -1402,18 +1403,18 @@ class ApplicationContext(QObject):
             preset = load_film_type_default_preset(film_type)
             if preset:
                 self.load_preset(preset)
-                self.status_message_changed.emit(f"已加载 {film_type} 胶片类型的默认预设")
+                self.status_message_changed.emit(tr("app_context.preset_messages.film_type_preset_loaded", film_type=film_type))
             else:
                 raise ValueError(f"无法加载胶片类型 '{film_type}' 的默认预设")
         except Exception as e:
-            self.status_message_changed.emit(f"加载胶片类型默认预设失败: {e}")
+            self.status_message_changed.emit(tr("app_context.preset_messages.film_type_preset_failed", error=e))
             # 回退到通用默认预设
             try:
                 from divere.utils.defaults import load_default_preset
                 self.load_preset(load_default_preset())
-                self.status_message_changed.emit("已回退到通用默认预设")
+                self.status_message_changed.emit(tr("app_context.preset_messages.fallback_to_default"))
             except Exception as fallback_error:
-                self.status_message_changed.emit(f"加载默认预设失败: {fallback_error}")
+                self.status_message_changed.emit(tr("app_context.preset_messages.load_default_failed", error=fallback_error))
 
     def reset_params(self):
         """重置参数：根据当前图像类型选择智能默认预设"""
@@ -1424,28 +1425,28 @@ class ApplicationContext(QObject):
             # 有图像时，使用智能分类器选择默认预设
             try:
                 self._load_smart_default_preset(self._current_image.file_path)
-                self.status_message_changed.emit("参数已重置为智能分类默认预设")
+                self.status_message_changed.emit(tr("app_context.preset_messages.reset_to_auto_classification"))
             except Exception:
                 # 智能分类失败时，回退到通用默认
                 try:
                     from divere.utils.defaults import load_default_preset
                     self.load_preset(load_default_preset())
-                    self.status_message_changed.emit("参数已重置为通用默认预设")
+                    self.status_message_changed.emit(tr("app_context.preset_messages.reset_to_default"))
                 except Exception:
                     self._current_params = self._create_default_params()
                     self._contactsheet_profile.params = self._current_params.shallow_copy()  # 优化：只读保存，使用 shallow_copy()
                     self.params_changed.emit(self._current_params)
-                    self.status_message_changed.emit("参数已重置（回退内部默认）")
+                    self.status_message_changed.emit(tr("app_context.preset_messages.reset_to_internal"))
         else:
             # 没有图像时，使用通用默认
             try:
                 self._load_generic_default_preset()
-                self.status_message_changed.emit("参数已重置为通用默认预设")
+                self.status_message_changed.emit(tr("app_context.preset_messages.reset_to_default"))
             except Exception:
                 self._current_params = self._create_default_params()
                 self._contactsheet_profile.params = self._current_params.shallow_copy()  # 优化：只读保存，使用 shallow_copy()
                 self.params_changed.emit(self._current_params)
-                self.status_message_changed.emit("参数已重置（回退内部默认）")
+                self.status_message_changed.emit(tr("app_context.preset_messages.reset_to_internal"))
         
         # 恢复保存的orientation
         self._contactsheet_profile.orientation = saved_orientation
@@ -1457,7 +1458,7 @@ class ApplicationContext(QObject):
     def set_current_as_folder_default(self):
         """将当前参数设置为文件夹默认设置"""
         if not self._current_image:
-            self.status_message_changed.emit("请先加载图像")
+            self.status_message_changed.emit(tr("app_context.image_loading.please_load_image"))
             return
         
         try:
@@ -1526,11 +1527,11 @@ class ApplicationContext(QObject):
             # 通过AutoPresetManager保存folder_default
             self.auto_preset_manager.set_active_directory(str(image_path.parent))
             self.auto_preset_manager.save_folder_default(idt_data, cc_params_data)
-            
-            self.status_message_changed.emit(f"已将当前设置保存为文件夹默认设置")
-            
+
+            self.status_message_changed.emit(tr("app_context.preset_messages.folder_default_saved"))
+
         except Exception as e:
-            self.status_message_changed.emit(f"保存文件夹默认设置失败: {e}")
+            self.status_message_changed.emit(tr("app_context.preset_messages.folder_default_save_failed", error=e))
 
     def run_auto_color_correction(self, get_preview_callback):
         """执行AI自动白平衡"""
@@ -1538,12 +1539,12 @@ class ApplicationContext(QObject):
         if self.is_monochrome_type():
             pipeline_config = self.film_type_controller.get_pipeline_config(self._current_film_type)
             if not pipeline_config.enable_rgb_gains:
-                self.status_message_changed.emit("黑白胶片模式下RGB自动校色功能已禁用")
+                self.status_message_changed.emit(tr("app_context.auto_color.bw_mode_disabled"))
                 return
-        
+
         preview_image = get_preview_callback()
         if preview_image is None or preview_image.array is None:
-            self.status_message_changed.emit("自动校色失败：无预览图像")
+            self.status_message_changed.emit(tr("app_context.auto_color.no_preview_image"))
             return
 
         try:
@@ -1565,15 +1566,15 @@ class ApplicationContext(QObject):
             if self.is_monochrome_type():
                 # 黑白图像：只显示灰度增益
                 self.status_message_changed.emit(
-                    f"AI自动校色完成. ΔGain(×γ/2): 灰度={delta[0]:.2f}"
+                    tr("app_context.auto_color.complete_mono", gray=delta[0])
                 )
             else:
                 # 彩色图像：显示RGB增益
                 self.status_message_changed.emit(
-                    f"AI自动校色完成. ΔGains(×γ/2): R={delta[0]:.2f}, G={delta[1]:.2f}, B={delta[2]:.2f}"
+                    tr("app_context.auto_color.complete_color", r=delta[0], g=delta[1], b=delta[2])
                 )
         except Exception as e:
-            self.status_message_changed.emit(f"AI自动校色失败: {e}")
+            self.status_message_changed.emit(tr("app_context.auto_color.failed", error=e))
 
     def run_iterative_auto_color(self, get_preview_callback, max_iterations=10):
         """执行迭代式AI自动白平衡"""
@@ -1581,7 +1582,7 @@ class ApplicationContext(QObject):
         if self.is_monochrome_type():
             pipeline_config = self.film_type_controller.get_pipeline_config(self._current_film_type)
             if not pipeline_config.enable_rgb_gains:
-                self.status_message_changed.emit("黑白胶片模式下RGB迭代校色功能已禁用")
+                self.status_message_changed.emit(tr("app_context.auto_color.iterative_disabled"))
                 return
         
         self._auto_color_iterations = max_iterations
@@ -1597,14 +1598,14 @@ class ApplicationContext(QObject):
         if self.is_monochrome_type():
             pipeline_config = self.film_type_controller.get_pipeline_config(self._current_film_type)
             if not pipeline_config.enable_rgb_gains:
-                self.status_message_changed.emit("黑白胶片模式下RGB迭代校色已中止")
+                self.status_message_changed.emit(tr("app_context.auto_color.iterative_stopped"))
                 self._auto_color_iterations = 0
                 self._get_preview_for_auto_color_callback = None
                 return
 
         preview_image = self._get_preview_for_auto_color_callback()
         if preview_image is None or preview_image.array is None:
-            self.status_message_changed.emit("自动校色迭代中止：无预览图像")
+            self.status_message_changed.emit(tr("app_context.auto_color.iterative_no_preview"))
             self._get_preview_for_auto_color_callback = None # Clean up
             return
 
@@ -1622,7 +1623,7 @@ class ApplicationContext(QObject):
             
             # If gains are very small, stop iterating
             if np.allclose(current_gains, new_gains, atol=1e-3):
-                self.status_message_changed.emit("AI自动校色收敛，已停止")
+                self.status_message_changed.emit(tr("app_context.auto_color.converged"))
                 self._auto_color_iterations = 0
                 self._get_preview_for_auto_color_callback = None
                 self._autosave_timer.start() # Save on convergence
@@ -1632,10 +1633,10 @@ class ApplicationContext(QObject):
             new_params = self._current_params.shallow_copy()  # 优化：仅修改 rgb_gains (tuple)，使用 shallow_copy()
             new_params.rgb_gains = tuple(new_gains)
             self.update_params(new_params)  # 将触发预览；_on_preview_result 会调度下一次迭代
-            self.status_message_changed.emit(f"AI校色迭代剩余: {self._auto_color_iterations}")
+            self.status_message_changed.emit(tr("app_context.auto_color.iterations_remaining", count=self._auto_color_iterations))
 
         except Exception as e:
-            self.status_message_changed.emit(f"AI自动校色迭代失败: {e}")
+            self.status_message_changed.emit(tr("app_context.auto_color.iterative_failed", error=e))
             self._auto_color_iterations = 0
             self._get_preview_for_auto_color_callback = None
 
@@ -1681,14 +1682,14 @@ class ApplicationContext(QObject):
         if self._neutral_point_iterations <= 0 or not self._neutral_point_callback:
             self._neutral_point_callback = None
             self._neutral_point_norm = None
-            self.status_message_changed.emit("中性色定义完成")
+            self.status_message_changed.emit(tr("app_context.neutral_color.complete"))
             self._autosave_timer.start()
             return
 
         # 获取当前preview图像（DisplayP3空间）
         preview_image = self._neutral_point_callback()
         if preview_image is None or preview_image.array is None:
-            self.status_message_changed.emit("中性色定义中止：无preview图像")
+            self.status_message_changed.emit(tr("app_context.neutral_color.no_preview"))
             self._neutral_point_callback = None
             self._neutral_point_norm = None
             return
@@ -1741,7 +1742,7 @@ class ApplicationContext(QObject):
             max_ratio_diff = max(r_ratio_diff, b_ratio_diff)
 
             if max_ratio_diff < 0.001:  # 比值差异阈值0.001
-                self.status_message_changed.emit(f"中性色已收敛 (比值差异={max_ratio_diff:.4f})")
+                self.status_message_changed.emit(tr("app_context.neutral_color.converged", diff=max_ratio_diff))
                 self._neutral_point_iterations = 0
                 self._neutral_point_callback = None
                 self._neutral_point_norm = None
@@ -1764,11 +1765,11 @@ class ApplicationContext(QObject):
             self._neutral_point_iterations -= 1
             self.update_params(new_params)
             self.status_message_changed.emit(
-                f"中性色迭代中... 剩余{self._neutral_point_iterations}次 (目标={white_point}K, 比值差异={max_ratio_diff:.4f})"
+                tr("app_context.neutral_color.iterating", count=self._neutral_point_iterations, white_point=white_point, diff=max_ratio_diff)
             )
 
         except Exception as e:
-            self.status_message_changed.emit(f"中性色定义迭代失败: {e}")
+            self.status_message_changed.emit(tr("app_context.neutral_color.failed", error=e))
             self._neutral_point_iterations = 0
             self._neutral_point_callback = None
             self._neutral_point_norm = None
@@ -1787,7 +1788,7 @@ class ApplicationContext(QObject):
         if self.is_monochrome_type():
             pipeline_config = self.film_type_controller.get_pipeline_config(self._current_film_type)
             if not pipeline_config.enable_rgb_gains:
-                self.status_message_changed.emit("黑白胶片模式下RGB增益调整功能已禁用")
+                self.status_message_changed.emit(tr("app_context.neutral_color.rgb_adjustment_disabled"))
                 return
 
         # 初始化迭代状态
@@ -1797,7 +1798,7 @@ class ApplicationContext(QObject):
         self._neutral_point_sample_size = 5
         self._neutral_point_white_point = white_point  # 保存色温参数
 
-        self.status_message_changed.emit(f"开始中性色定义迭代 (色温={white_point}K)...")
+        self.status_message_changed.emit(tr("app_context.neutral_color.start_iteration", white_point=white_point))
 
         # 开始第一次迭代
         self._perform_neutral_point_iteration()
@@ -1993,7 +1994,7 @@ class ApplicationContext(QObject):
 
         # 在色卡优化期间不发送预览错误消息，避免覆盖优化状态
         if not self._ccm_optimization_active:
-            self.status_message_changed.emit(f"预览更新失败: {message}")
+            self.status_message_changed.emit(tr("app_context.preview.update_failed", message=message))
         else:
             print(f"[DEBUG] 色卡优化期间忽略预览错误: {message}")
         self._auto_color_iterations = 0 # Stop iteration on error
@@ -2110,7 +2111,7 @@ class ApplicationContext(QObject):
             print("[DEBUG] set_orientation() 执行完成", flush=True)
         except Exception as e:
             import traceback
-            error_msg = f"设置orientation失败: {str(e)}\n{traceback.format_exc()}"
+            error_msg = tr("app_context.errors.set_orientation_failed", error=str(e), traceback=traceback.format_exc())
             print(f"[ERROR] {error_msg}", flush=True)
             self.status_message_changed.emit(error_msg)
     
@@ -2168,7 +2169,7 @@ class ApplicationContext(QObject):
             print("[DEBUG] rotate() 执行完成", flush=True)
         except Exception as e:
             import traceback
-            error_msg = f"旋转操作失败: {str(e)}\n{traceback.format_exc()}"
+            error_msg = tr("app_context.errors.rotate_failed", error=str(e), traceback=traceback.format_exc())
             print(f"[ERROR] {error_msg}", flush=True)
             self.status_message_changed.emit(error_msg)
 
@@ -2189,7 +2190,7 @@ class ApplicationContext(QObject):
             print("[DEBUG] update_active_crop_orientation() 执行完成", flush=True)
         except Exception as e:
             import traceback
-            error_msg = f"更新crop orientation失败: {str(e)}\n{traceback.format_exc()}"
+            error_msg = tr("app_context.errors.update_crop_orientation_failed", error=str(e), traceback=traceback.format_exc())
             print(f"[ERROR] {error_msg}", flush=True)
             self.status_message_changed.emit(error_msg)
 
@@ -2212,7 +2213,7 @@ class ApplicationContext(QObject):
             # 发出curves配置重载信号，通知所有相关UI组件刷新
             self.curves_config_reloaded.emit()
         except Exception as e:
-            self.status_message_changed.emit(f"重新加载curves配置失败: {e}")
+            self.status_message_changed.emit(tr("app_context.config.reload_curves_failed", error=e))
 
     def reload_all_configs(self):
         """重新加载所有配置文件"""
@@ -2225,10 +2226,10 @@ class ApplicationContext(QObject):
             
             # 重新加载curves配置
             self.reload_curves_config()
-            
-            self.status_message_changed.emit("配置文件已重新加载")
+
+            self.status_message_changed.emit(tr("app_context.config.reloaded"))
         except Exception as e:
-            self.status_message_changed.emit(f"重新加载配置失败: {e}")
+            self.status_message_changed.emit(tr("app_context.config.reload_failed", error=e))
     
     def get_reference_colors(self, filename: str):
         """
@@ -2300,10 +2301,10 @@ class ApplicationContext(QObject):
             
             # 触发预览更新以应用新的proxy尺寸
             self._trigger_preview_update()
-            
-            self.status_message_changed.emit(f"Proxy长边尺寸已更新为: {size}")
+
+            self.status_message_changed.emit(tr("app_context.config.proxy_size_updated", size=size))
         except Exception as e:
-            self.status_message_changed.emit(f"更新Proxy尺寸失败: {e}")
+            self.status_message_changed.emit(tr("app_context.config.proxy_size_update_failed", error=e))
 
     # =================
     # 状态备份/恢复方法（用于批量保存）
@@ -2700,7 +2701,7 @@ class ApplicationContext(QObject):
 
             # 提示用户
             self.status_message_changed.emit(
-                "进程隔离启动失败，已回退到线程模式（内存优化受限）"
+                tr("app_context.preview.process_fallback")
             )
 
             # 使用线程模式重新触发预览

@@ -4,6 +4,7 @@ from PySide6.QtGui import QShortcut, QKeySequence
 from PySide6.QtWidgets import QApplication
 
 import sys
+from divere.i18n import tr
 
 
 class ShortcutsBinder(QObject):
@@ -111,64 +112,64 @@ class ShortcutsBinder(QObject):
     # ---------- 内置动作（不再依赖主窗实现） ----------
     # 导航
     def _act_go_prev(self):
-        self.host._show_status_message("⏳正在切换到上一张照片...")
+        self.host._show_status_message(tr("shortcuts.status_messages.switching_prev"))
         self.host._fit_after_next_preview = True
         self.host.preview_widget.context.folder_navigator.navigate_previous()
         self.host.preview_widget._emit_switch_profile('contactsheet', None)
-        self.host._show_status_message("已切换到上一张照片")
+        self.host._show_status_message(tr("shortcuts.status_messages.switched_prev"))
 
     def _act_go_next(self):
-        self.host._show_status_message("⏳正在切换到下一张照片...")
+        self.host._show_status_message(tr("shortcuts.status_messages.switching_next"))
         self.host._fit_after_next_preview = True
         self.host.preview_widget.context.folder_navigator.navigate_next()
         self.host.preview_widget._emit_switch_profile('contactsheet', None)
-        self.host._show_status_message("已切换到下一张照片")
+        self.host._show_status_message(tr("shortcuts.status_messages.switched_next"))
 
     # 旋转
     def _act_rotate_left(self):
         self.host.context.rotate(90)
-        self.host._show_status_message("左旋转 90°")
+        self.host._show_status_message(tr("shortcuts.status_messages.rotate_left"))
 
     def _act_rotate_right(self):
         self.host.context.rotate(-90)
-        self.host._show_status_message("右旋转 90°")
+        self.host._show_status_message(tr("shortcuts.status_messages.rotate_right"))
 
     # 参数重置/默认
     def _act_reset_parameters(self):
         self.host._reset_parameters()
-        self.host._show_status_message("参数已重置")
+        self.host._show_status_message(tr("shortcuts.status_messages.parameters_reset"))
 
     def _act_set_folder_default(self):
         self.host._set_folder_default()
-        self.host._show_status_message("已设为文件夹默认")
+        self.host._show_status_message(tr("shortcuts.status_messages.set_as_folder_default"))
 
     # R通道
     def _act_R_down(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (max(-3.0, min(3.0, r - 0.01)), g, b)
-            self.host._show_status_message(f"R通道: {p.rgb_gains[0]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_channel", value=p.rgb_gains[0]))
         self._with_params(op)
 
     def _act_R_down_fine(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (max(-3.0, min(3.0, r - 0.001)), g, b)
-            self.host._show_status_message(f"R通道: {p.rgb_gains[0]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_channel", value=p.rgb_gains[0]))
         self._with_params(op)
 
     def _act_R_up(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (max(-3.0, min(3.0, r + 0.01)), g, b)
-            self.host._show_status_message(f"R通道: {p.rgb_gains[0]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_channel", value=p.rgb_gains[0]))
         self._with_params(op)
 
     def _act_R_up_fine(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (max(-3.0, min(3.0, r + 0.001)), g, b)
-            self.host._show_status_message(f"R通道: {p.rgb_gains[0]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_channel", value=p.rgb_gains[0]))
         self._with_params(op)
 
     # B通道
@@ -176,128 +177,128 @@ class ShortcutsBinder(QObject):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (r, g, max(-3.0, min(3.0, b - 0.01)))
-            self.host._show_status_message(f"B通道: {p.rgb_gains[2]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_channel", value=p.rgb_gains[2]))
         self._with_params(op)
 
     def _act_B_down_fine(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (r, g, max(-3.0, min(3.0, b - 0.001)))
-            self.host._show_status_message(f"B通道: {p.rgb_gains[2]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_channel", value=p.rgb_gains[2]))
         self._with_params(op)
 
     def _act_B_up(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (r, g, max(-3.0, min(3.0, b + 0.01)))
-            self.host._show_status_message(f"B通道: {p.rgb_gains[2]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_channel", value=p.rgb_gains[2]))
         self._with_params(op)
 
     def _act_B_up_fine(self):
         def op(p):
             r, g, b = p.rgb_gains
             p.rgb_gains = (r, g, max(-3.0, min(3.0, b + 0.001)))
-            self.host._show_status_message(f"B通道: {p.rgb_gains[2]:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_channel", value=p.rgb_gains[2]))
         self._with_params(op)
 
     # dmax
     def _act_dmax_down(self):
         def op(p):
             p.density_dmax = max(0.0, min(4.8, p.density_dmax - 0.01))
-            self.host._show_status_message(f"最大密度: {p.density_dmax:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.max_density", value=p.density_dmax))
         self._with_params(op)
 
     def _act_dmax_down_fine(self):
         def op(p):
             p.density_dmax = max(0.0, min(4.8, p.density_dmax - 0.001))
-            self.host._show_status_message(f"最大密度: {p.density_dmax:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.max_density", value=p.density_dmax))
         self._with_params(op)
 
     def _act_dmax_up(self):
         def op(p):
             p.density_dmax = max(0.0, min(4.8, p.density_dmax + 0.01))
-            self.host._show_status_message(f"最大密度: {p.density_dmax:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.max_density", value=p.density_dmax))
         self._with_params(op)
 
     def _act_dmax_up_fine(self):
         def op(p):
             p.density_dmax = max(0.0, min(4.8, p.density_dmax + 0.001))
-            self.host._show_status_message(f"最大密度: {p.density_dmax:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.max_density", value=p.density_dmax))
         self._with_params(op)
 
     # gamma
     def _act_gamma_up(self):
         def op(p):
             p.density_gamma = max(0.1, min(4.0, p.density_gamma + 0.01))
-            self.host._show_status_message(f"密度反差: {p.density_gamma:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.density_contrast", value=p.density_gamma))
         self._with_params(op)
 
     def _act_gamma_up_fine(self):
         def op(p):
             p.density_gamma = max(0.1, min(4.0, p.density_gamma + 0.001))
-            self.host._show_status_message(f"密度反差: {p.density_gamma:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.density_contrast", value=p.density_gamma))
         self._with_params(op)
 
     def _act_gamma_down(self):
         def op(p):
             p.density_gamma = max(0.1, min(4.0, p.density_gamma - 0.01))
-            self.host._show_status_message(f"密度反差: {p.density_gamma:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.density_contrast", value=p.density_gamma))
         self._with_params(op)
 
     def _act_gamma_down_fine(self):
         def op(p):
             p.density_gamma = max(0.1, min(4.0, p.density_gamma - 0.001))
-            self.host._show_status_message(f"密度反差: {p.density_gamma:.3f}")
+            self.host._show_status_message(tr("shortcuts.status_messages.density_contrast", value=p.density_gamma))
         self._with_params(op)
 
     # Channel Gamma R (亮部分层反差 - 红青平衡)
     def _act_channel_gamma_r_up(self):
         def op(p):
             p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r + 0.01))
-            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变红)")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_gamma_warm", value=p.channel_gamma_r))
         self._with_params(op)
 
     def _act_channel_gamma_r_up_fine(self):
         def op(p):
             p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r + 0.001))
-            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变红)")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_gamma_warm", value=p.channel_gamma_r))
         self._with_params(op)
 
     def _act_channel_gamma_r_down(self):
         def op(p):
             p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r - 0.01))
-            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变青)")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_gamma_cool", value=p.channel_gamma_r))
         self._with_params(op)
 
     def _act_channel_gamma_r_down_fine(self):
         def op(p):
             p.channel_gamma_r = max(0.5, min(2.0, p.channel_gamma_r - 0.001))
-            self.host._show_status_message(f"R Gamma: {p.channel_gamma_r:.3f} (亮部变青)")
+            self.host._show_status_message(tr("shortcuts.status_messages.r_gamma_cool", value=p.channel_gamma_r))
         self._with_params(op)
 
     # Channel Gamma B (亮部分层反差 - 蓝黄平衡)
     def _act_channel_gamma_b_up(self):
         def op(p):
             p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b + 0.01))
-            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变蓝)")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_gamma_warm", value=p.channel_gamma_b))
         self._with_params(op)
 
     def _act_channel_gamma_b_up_fine(self):
         def op(p):
             p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b + 0.001))
-            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变蓝)")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_gamma_warm", value=p.channel_gamma_b))
         self._with_params(op)
 
     def _act_channel_gamma_b_down(self):
         def op(p):
             p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b - 0.01))
-            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变黄)")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_gamma_cool", value=p.channel_gamma_b))
         self._with_params(op)
 
     def _act_channel_gamma_b_down_fine(self):
         def op(p):
             p.channel_gamma_b = max(0.5, min(2.0, p.channel_gamma_b - 0.001))
-            self.host._show_status_message(f"B Gamma: {p.channel_gamma_b:.3f} (亮部变黄)")
+            self.host._show_status_message(tr("shortcuts.status_messages.b_gamma_cool", value=p.channel_gamma_b))
         self._with_params(op)
 
     def _act_auto_color(self):

@@ -3,7 +3,7 @@
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QGroupBox, 
+    QDialog, QVBoxLayout, QHBoxLayout, QGroupBox,
     QRadioButton, QComboBox, QCheckBox, QPushButton,
     QLabel, QGridLayout, QDialogButtonBox, QSplitter,
     QTreeWidget, QTreeWidgetItem, QProgressDialog, QSlider
@@ -11,6 +11,8 @@ from PySide6.QtWidgets import (
 from PySide6.QtCore import Qt, QThread, Signal
 from pathlib import Path
 from typing import Dict, List, Optional, Set
+
+from divere.i18n import tr
 
 
 class SaveImageDialog(QDialog):
@@ -24,7 +26,7 @@ class SaveImageDialog(QDialog):
     
     def __init__(self, parent=None, color_spaces=None, is_bw_mode=False, color_space_manager=None, app_context=None):
         super().__init__(parent)
-        self.setWindowTitle("保存图像设置")
+        self.setWindowTitle(tr("save_dialog.title"))
         self.setModal(True)
         self.setMinimumWidth(800)  # 增加宽度以容纳左右布局
         self._save_mode = 'single'  # 'single' | 'all'
@@ -95,9 +97,9 @@ class SaveImageDialog(QDialog):
         button_box = QDialogButtonBox()
         # 标准"保存单张"按钮
         ok_btn = button_box.addButton(QDialogButtonBox.StandardButton.Ok)
-        ok_btn.setText("保存单张")
-        # 自定义"保存所有"按钮  
-        self.save_all_btn = QPushButton("保存所有")
+        ok_btn.setText(tr("save_dialog.button_save_single"))
+        # 自定义"保存所有"按钮
+        self.save_all_btn = QPushButton(tr("save_dialog.button_save_all"))
         button_box.addButton(self.save_all_btn, QDialogButtonBox.ButtonRole.AcceptRole)
         # 取消
         cancel_btn = button_box.addButton(QDialogButtonBox.StandardButton.Cancel)
@@ -194,15 +196,15 @@ class SaveImageDialog(QDialog):
     
     def _create_left_panel(self):
         """创建左侧面板：现有的保存设置"""
-        left_widget = QGroupBox("保存设置")
+        left_widget = QGroupBox(tr("save_dialog.groups.save_settings"))
         layout = QVBoxLayout(left_widget)
         
         # 文件格式选择
-        format_group = QGroupBox("文件格式")
+        format_group = QGroupBox(tr("save_dialog.groups.file_format"))
         format_layout = QVBoxLayout(format_group)
-        
-        self.tiff_16bit_radio = QRadioButton("16-bit TIFF (推荐)")
-        self.jpeg_8bit_radio = QRadioButton("8-bit JPEG")
+
+        self.tiff_16bit_radio = QRadioButton(tr("save_dialog.format_16bit_tiff"))
+        self.jpeg_8bit_radio = QRadioButton(tr("save_dialog.format_8bit_jpeg"))
         
         format_layout.addWidget(self.tiff_16bit_radio)
         format_layout.addWidget(self.jpeg_8bit_radio)
@@ -210,10 +212,10 @@ class SaveImageDialog(QDialog):
         layout.addWidget(format_group)
         
         # 色彩空间选择
-        colorspace_group = QGroupBox("输出色彩管理")
+        colorspace_group = QGroupBox(tr("save_dialog.groups.color_management"))
         colorspace_layout = QGridLayout(colorspace_group)
-        
-        colorspace_layout.addWidget(QLabel("输出色彩空间（内嵌icc）:"), 0, 0)
+
+        colorspace_layout.addWidget(QLabel(tr("save_dialog.output_color_space_label")), 0, 0)
         self.colorspace_combo = QComboBox()
         self.colorspace_combo.addItems(self.color_spaces)
         colorspace_layout.addWidget(self.colorspace_combo, 0, 1)
@@ -221,10 +223,10 @@ class SaveImageDialog(QDialog):
         layout.addWidget(colorspace_group)
         
         # JPEG质量设置
-        self.jpeg_quality_group = QGroupBox("JPEG质量")
+        self.jpeg_quality_group = QGroupBox(tr("save_dialog.groups.jpeg_quality"))
         jpeg_quality_layout = QGridLayout(self.jpeg_quality_group)
-        
-        jpeg_quality_layout.addWidget(QLabel("质量:"), 0, 0)
+
+        jpeg_quality_layout.addWidget(QLabel(tr("save_dialog.quality_label")), 0, 0)
         self.jpeg_quality_slider = QSlider(Qt.Orientation.Horizontal)
         self.jpeg_quality_slider.setRange(1, 10)
         self.jpeg_quality_slider.setValue(9)  # 默认等级9(对应95质量)
@@ -241,10 +243,10 @@ class SaveImageDialog(QDialog):
         layout.addWidget(self.jpeg_quality_group)
         
         # 处理选项
-        options_group = QGroupBox("处理选项")
+        options_group = QGroupBox(tr("save_dialog.groups.processing_options"))
         options_layout = QVBoxLayout(options_group)
-        
-        self.include_curve_checkbox = QCheckBox("包含密度曲线调整")
+
+        self.include_curve_checkbox = QCheckBox(tr("save_dialog.include_density_curves"))
         self.include_curve_checkbox.setChecked(True)
         options_layout.addWidget(self.include_curve_checkbox)
         
@@ -254,32 +256,32 @@ class SaveImageDialog(QDialog):
         
     def _create_right_panel(self):
         """创建右侧面板：文件树和批量选择"""
-        right_widget = QGroupBox("批量导出选择")
+        right_widget = QGroupBox(tr("save_dialog.groups.batch_export"))
         layout = QVBoxLayout(right_widget)
-        
+
         # 说明标签
-        info_label = QLabel("选择要导出的文件（基于当前文件夹的divere_presets.json）：")
+        info_label = QLabel(tr("save_dialog.batch_files_label"))
         info_label.setWordWrap(True)
         layout.addWidget(info_label)
         
         # 文件树
         self.file_tree = QTreeWidget()
-        self.file_tree.setHeaderLabels(["文件", "类型"])
+        self.file_tree.setHeaderLabels([tr("save_dialog.table_headers.file"), tr("save_dialog.table_headers.type")])
         self.file_tree.itemChanged.connect(self._on_tree_item_changed)
         layout.addWidget(self.file_tree)
         
         # 快速选择按钮
         button_layout = QHBoxLayout()
-        
-        select_all_btn = QPushButton("全选")
+
+        select_all_btn = QPushButton(tr("save_dialog.button_select_all"))
         select_all_btn.clicked.connect(self._select_all)
         button_layout.addWidget(select_all_btn)
-        
-        select_none_btn = QPushButton("全不选")
+
+        select_none_btn = QPushButton(tr("save_dialog.button_deselect_all"))
         select_none_btn.clicked.connect(self._select_none)
         button_layout.addWidget(select_none_btn)
-        
-        select_default_btn = QPushButton("默认选择")
+
+        select_default_btn = QPushButton(tr("save_dialog.button_default_selection"))
         select_default_btn.clicked.connect(self._select_default)
         button_layout.addWidget(select_default_btn)
         
@@ -477,10 +479,10 @@ class SaveImageDialog(QDialog):
         """更新保存所有按钮的状态和文本"""
         count = len(self._selected_files)
         if count == 0:
-            self.save_all_btn.setText("保存所有")
+            self.save_all_btn.setText(tr("save_dialog.button_save_all"))
             self.save_all_btn.setEnabled(False)
         else:
-            self.save_all_btn.setText(f"保存所有 ({count})")
+            self.save_all_btn.setText(f"{tr('save_dialog.button_save_all')} ({count})")
             self.save_all_btn.setEnabled(True)
 
     def get_settings(self):

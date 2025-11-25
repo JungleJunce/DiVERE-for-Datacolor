@@ -4,12 +4,13 @@ CMA-ES 优化进度对话框
 """
 
 from PySide6.QtWidgets import (
-    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton, 
+    QDialog, QVBoxLayout, QHBoxLayout, QLabel, QPushButton,
     QProgressBar, QTextEdit, QGroupBox
 )
 from PySide6.QtCore import Qt, QTimer, Signal, Slot
 from PySide6.QtGui import QFont
 import re
+from divere.i18n import tr
 
 
 class CMAESProgressDialog(QDialog):
@@ -20,7 +21,7 @@ class CMAESProgressDialog(QDialog):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("光谱锐化（硬件校正）优化进度")
+        self.setWindowTitle(tr("cmaes_dialog.title"))
         self.setModal(True)
         self.resize(500, 400)
         
@@ -41,7 +42,7 @@ class CMAESProgressDialog(QDialog):
         layout = QVBoxLayout(self)
         
         # 标题
-        title_label = QLabel("正在根据色卡优化光谱锐化（硬件校正）参数...")
+        title_label = QLabel(tr("cmaes_dialog.message"))
         title_font = QFont()
         title_font.setBold(True)
         title_font.setPointSize(12)
@@ -49,7 +50,7 @@ class CMAESProgressDialog(QDialog):
         layout.addWidget(title_label)
         
         # 进度信息组
-        progress_group = QGroupBox("优化进度")
+        progress_group = QGroupBox(tr("cmaes_dialog.groups.progress"))
         progress_layout = QVBoxLayout(progress_group)
         
         # 迭代进度条
@@ -61,9 +62,9 @@ class CMAESProgressDialog(QDialog):
         
         # 进度信息标签
         info_layout = QHBoxLayout()
-        self.iteration_label = QLabel("迭代: 0 / 300")
-        self.log_rmse_label = QLabel("当前 log-RMSE: --")
-        self.best_log_rmse_label = QLabel("最佳 log-RMSE: --")
+        self.iteration_label = QLabel(tr("cmaes_dialog.iteration_label", current=0, total=300))
+        self.log_rmse_label = QLabel(tr("cmaes_dialog.current_rmse_label", value="--"))
+        self.best_log_rmse_label = QLabel(tr("cmaes_dialog.best_rmse_label", value="--"))
         
         info_layout.addWidget(self.iteration_label)
         info_layout.addStretch()
@@ -75,7 +76,7 @@ class CMAESProgressDialog(QDialog):
         layout.addWidget(progress_group)
         
         # 详细日志
-        log_group = QGroupBox("详细日志")
+        log_group = QGroupBox(tr("cmaes_dialog.groups.detailed_log"))
         log_layout = QVBoxLayout(log_group)
         
         self.log_text = QTextEdit()
@@ -88,12 +89,12 @@ class CMAESProgressDialog(QDialog):
         # 按钮
         button_layout = QHBoxLayout()
         button_layout.addStretch()
-        
-        self.cancel_button = QPushButton("取消")
+
+        self.cancel_button = QPushButton(tr("cmaes_dialog.button_cancel"))
         self.cancel_button.clicked.connect(self.reject)
         button_layout.addWidget(self.cancel_button)
-        
-        self.close_button = QPushButton("关闭")
+
+        self.close_button = QPushButton(tr("cmaes_dialog.button_close"))
         self.close_button.clicked.connect(self.accept)
         self.close_button.setEnabled(False)
         button_layout.addWidget(self.close_button)
@@ -103,7 +104,7 @@ class CMAESProgressDialog(QDialog):
     def set_max_iterations(self, max_iter: int):
         """设置最大迭代次数"""
         self.max_iterations = max_iter
-        self.iteration_label.setText(f"迭代: {self.current_iteration} / {max_iter}")
+        self.iteration_label.setText(tr("cmaes_dialog.iteration_label", current=self.current_iteration, total=max_iter))
         
     def start_optimization(self):
         """开始优化"""
@@ -117,7 +118,7 @@ class CMAESProgressDialog(QDialog):
         
         self.progress_bar.setValue(0)
         self.log_text.clear()
-        self.add_log_message("开始CMA-ES优化...")
+        self.add_log_message(tr("cmaes_dialog.messages.starting"))
         
     def finish_optimization(self, success: bool, final_log_rmse: float = None):
         """完成优化"""
@@ -127,12 +128,12 @@ class CMAESProgressDialog(QDialog):
         
         if success:
             if final_log_rmse is not None:
-                self.add_log_message(f"✓ 优化成功完成！最终 log-RMSE: {final_log_rmse:.6f}")
+                self.add_log_message(tr("cmaes_dialog.messages.success", final_log_rmse=final_log_rmse))
             else:
-                self.add_log_message("✓ 优化成功完成！")
+                self.add_log_message(tr("cmaes_dialog.messages.success", final_log_rmse=self.best_log_rmse))
             self.progress_bar.setValue(100)
         else:
-            self.add_log_message("✗ 优化失败或被取消")
+            self.add_log_message(tr("cmaes_dialog.messages.failed"))
             
     def request_update_progress(self, message: str):
         """线程安全的进度更新请求接口"""
@@ -191,9 +192,9 @@ class CMAESProgressDialog(QDialog):
                         self.best_log_rmse = log_rmse
                     
                     # 更新界面
-                    self.iteration_label.setText(f"迭代: {iteration} / {self.max_iterations}")
-                    self.log_rmse_label.setText(f"当前 log-RMSE: {log_rmse:.6f}")
-                    self.best_log_rmse_label.setText(f"最佳 log-RMSE: {self.best_log_rmse:.6f}")
+                    self.iteration_label.setText(tr("cmaes_dialog.iteration_label", current=iteration, total=self.max_iterations))
+                    self.log_rmse_label.setText(tr("cmaes_dialog.current_rmse_label", value=f"{log_rmse:.6f}"))
+                    self.best_log_rmse_label.setText(tr("cmaes_dialog.best_rmse_label", value=f"{self.best_log_rmse:.6f}"))
                     
                     # 更新进度条
                     if self.max_iterations > 0:
@@ -210,7 +211,7 @@ class CMAESProgressDialog(QDialog):
             try:
                 iteration = int(iteration_match.group(1))
                 self.current_iteration = iteration
-                self.iteration_label.setText(f"迭代: {iteration} / {self.max_iterations}")
+                self.iteration_label.setText(tr("cmaes_dialog.iteration_label", current=iteration, total=self.max_iterations))
                 
                 if self.max_iterations > 0:
                     progress = min(100, int(iteration * 100 / self.max_iterations))
@@ -232,7 +233,7 @@ class CMAESProgressDialog(QDialog):
             # 如果优化正在进行，询问是否取消
             from PySide6.QtWidgets import QMessageBox
             reply = QMessageBox.question(
-                self, "确认", "优化正在进行中，确定要取消吗？",
+                self, tr("main_window.dialogs.confirm"), tr("cmaes_dialog.messages.confirm_cancel"),
                 QMessageBox.StandardButton.Yes | QMessageBox.StandardButton.No,
                 QMessageBox.StandardButton.No
             )
@@ -241,5 +242,5 @@ class CMAESProgressDialog(QDialog):
             else:
                 event.ignore()
                 return
-        
+
         super().closeEvent(event)

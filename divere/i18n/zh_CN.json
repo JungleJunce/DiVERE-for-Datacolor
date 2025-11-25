@@ -345,6 +345,116 @@
       "b_gamma_cool": "B Gamma: {value:.3f} (亮部变黄)"
     }
   },
+  "app_context": {
+    "preset_messages": {
+      "auto_classification_applied": "已应用智能分类默认设置",
+      "auto_classification_failed": "智能分类失败，已应用通用默认设置: {error}",
+      "auto_preset_bundle_loaded": "已为图像加载自动预设（Bundle）",
+      "auto_preset_loaded": "已为图像加载自动预设: {name}",
+      "preset_not_found_default": "未找到预设，已应用通用默认预设",
+      "preset_not_found_fallback": "未找到预设，已应用默认参数（回退）",
+      "film_type_preset_loaded": "已加载 {film_type} 胶片类型的默认预设",
+      "film_type_preset_failed": "加载胶片类型默认预设失败: {error}",
+      "fallback_to_default": "已回退到通用默认预设",
+      "load_default_failed": "加载默认预设失败: {error}",
+      "reset_to_auto_classification": "参数已重置为智能分类默认预设",
+      "reset_to_default": "参数已重置为通用默认预设",
+      "reset_to_internal": "参数已重置（回退内部默认）",
+      "folder_default_saved": "已将当前设置保存为文件夹默认设置",
+      "folder_default_save_failed": "保存文件夹默认设置失败: {error}"
+    },
+    "image_loading": {
+      "loading_image": "正在加载图像: {file_path}...",
+      "monochrome_detected": "检测到单色图像，已自动切换为黑白模式",
+      "load_image_failed": "无法加载图像: {error}",
+      "please_load_image": "请先加载图像",
+      "converted_to_bw": "已转换为黑白模式: {film_type}"
+    },
+    "auto_color": {
+      "bw_mode_disabled": "黑白胶片模式下RGB自动校色功能已禁用",
+      "no_preview_image": "自动校色失败：无预览图像",
+      "complete_mono": "AI自动校色完成. ΔGain(×γ/2): 灰度={gray:.2f}",
+      "complete_color": "AI自动校色完成. ΔGains(×γ/2): R={r:.2f}, G={g:.2f}, B={b:.2f}",
+      "failed": "AI自动校色失败: {error}",
+      "iterative_disabled": "黑白胶片模式下RGB迭代校色功能已禁用",
+      "iterative_stopped": "黑白胶片模式下RGB迭代校色已中止",
+      "iterative_no_preview": "自动校色迭代中止：无预览图像",
+      "converged": "AI自动校色收敛，已停止",
+      "iterations_remaining": "AI校色迭代剩余: {count}",
+      "iterative_failed": "AI自动校色迭代失败: {error}"
+    },
+    "neutral_color": {
+      "rgb_adjustment_disabled": "黑白胶片模式下RGB增益调整功能已禁用",
+      "complete": "中性色定义完成",
+      "no_preview": "中性色定义中止：无preview图像",
+      "converged": "中性色已收敛 (比值差异={diff:.4f})",
+      "iterating": "中性色迭代中... 剩余{count}次 (目标={white_point}K, 比值差异={diff:.4f})",
+      "failed": "中性色定义迭代失败: {error}",
+      "start_iteration": "开始中性色定义迭代 (色温={white_point}K)..."
+    },
+    "preview": {
+      "update_failed": "预览更新失败: {message}",
+      "process_fallback": "进程隔离启动失败，已回退到线程模式（内存优化受限）"
+    },
+    "config": {
+      "reload_curves_failed": "重新加载curves配置失败: {error}",
+      "reloaded": "配置文件已重新加载",
+      "reload_failed": "重新加载配置失败: {error}",
+      "proxy_size_updated": "Proxy长边尺寸已更新为: {size}",
+      "proxy_size_update_failed": "更新Proxy尺寸失败: {error}"
+    },
+    "errors": {
+      "set_orientation_failed": "设置orientation失败: {error}\n{traceback}",
+      "rotate_failed": "旋转操作失败: {error}\n{traceback}",
+      "update_crop_orientation_failed": "更新crop orientation失败: {error}\n{traceback}"
+    }
+  },
+  "preview_widget": {
+    "buttons": {
+      "rotate_left": "左旋 ↶",
+      "rotate_right": "右旋 ↷",
+      "fit_window": "适应窗口",
+      "center": "居中",
+      "colorchecker": "色卡选择器",
+      "crop_focus": "裁剪聚焦",
+      "original": "原图",
+      "contactsheet": "接触印相",
+      "add_crop": "+"
+    },
+    "tooltips": {
+      "add_crop": "添加新裁剪",
+      "select_direction": "选择添加方向",
+      "nav_prev": "上一张图片",
+      "nav_next": "下一张图片",
+      "file_combo": "选择当前文件夹中的文件",
+      "crop_name": "裁剪 {idx}"
+    },
+    "labels": {
+      "load_image": "请加载图像",
+      "display_error": "显示错误: {error}"
+    },
+    "crop_directions": {
+      "down_right": "优先向下，边缘时向右",
+      "down_left": "优先向下，边缘时向左",
+      "right_down": "优先向右，边缘时向下",
+      "right_up": "优先向右，边缘时向上",
+      "up_left": "优先向上，边缘时向左",
+      "up_right": "优先向上，边缘时向右",
+      "left_up": "优先向左，边缘时向上",
+      "left_down": "优先向左，边缘时向下"
+    },
+    "dialogs": {
+      "workspace_incompatible_title": "工作空间不兼容",
+      "workspace_incompatible_message": "无法加载色卡文件: {filename}",
+      "workspace_incompatible_detail": "请选择其他色卡文件或切换到正确的工作空间。"
+    },
+    "status_messages": {
+      "no_crops": "没有裁剪区域",
+      "switch_to_crop": "切换到 {name}",
+      "switch_to_contactsheet": "切换到接触印相",
+      "switch_failed": "切换失败: {error}"
+    }
+  },
   "common": {
     "ok": "确定",
     "cancel": "取消",

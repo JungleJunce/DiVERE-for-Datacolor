@@ -345,6 +345,116 @@
       "b_gamma_cool": "B Gamma: {value:.3f} (highlights yellower)"
     }
   },
+  "app_context": {
+    "preset_messages": {
+      "auto_classification_applied": "Auto classification default settings applied",
+      "auto_classification_failed": "Auto classification failed, applied generic default settings: {error}",
+      "auto_preset_bundle_loaded": "Loaded auto preset bundle for image",
+      "auto_preset_loaded": "Loaded auto preset for image: {name}",
+      "preset_not_found_default": "Preset not found, applied generic default preset",
+      "preset_not_found_fallback": "Preset not found, applied default parameters (fallback)",
+      "film_type_preset_loaded": "Loaded {film_type} film type default preset",
+      "film_type_preset_failed": "Failed to load film type default preset: {error}",
+      "fallback_to_default": "Fell back to generic default preset",
+      "load_default_failed": "Failed to load default preset: {error}",
+      "reset_to_auto_classification": "Parameters reset to auto classification default preset",
+      "reset_to_default": "Parameters reset to generic default preset",
+      "reset_to_internal": "Parameters reset (internal default fallback)",
+      "folder_default_saved": "Current settings saved as folder default",
+      "folder_default_save_failed": "Failed to save folder default settings: {error}"
+    },
+    "image_loading": {
+      "loading_image": "Loading image: {file_path}...",
+      "monochrome_detected": "Monochrome image detected, automatically switched to B&W mode",
+      "load_image_failed": "Failed to load image: {error}",
+      "please_load_image": "Please load an image first",
+      "converted_to_bw": "Converted to B&W mode: {film_type}"
+    },
+    "auto_color": {
+      "bw_mode_disabled": "RGB auto color correction disabled in B&W film mode",
+      "no_preview_image": "Auto color failed: no preview image",
+      "complete_mono": "AI auto color complete. ΔGain(×γ/2): Gray={gray:.2f}",
+      "complete_color": "AI auto color complete. ΔGains(×γ/2): R={r:.2f}, G={g:.2f}, B={b:.2f}",
+      "failed": "AI auto color failed: {error}",
+      "iterative_disabled": "RGB iterative color correction disabled in B&W film mode",
+      "iterative_stopped": "RGB iterative color correction stopped in B&W film mode",
+      "iterative_no_preview": "Auto color iteration stopped: no preview image",
+      "converged": "AI auto color converged, stopped",
+      "iterations_remaining": "AI color iterations remaining: {count}",
+      "iterative_failed": "AI auto color iteration failed: {error}"
+    },
+    "neutral_color": {
+      "rgb_adjustment_disabled": "RGB gain adjustment disabled in B&W film mode",
+      "complete": "Neutral color definition complete",
+      "no_preview": "Neutral color definition stopped: no preview image",
+      "converged": "Neutral color converged (ratio diff={diff:.4f})",
+      "iterating": "Neutral color iterating... {count} remaining (target={white_point}K, ratio diff={diff:.4f})",
+      "failed": "Neutral color definition iteration failed: {error}",
+      "start_iteration": "Starting neutral color definition iteration (color temp={white_point}K)..."
+    },
+    "preview": {
+      "update_failed": "Preview update failed: {message}",
+      "process_fallback": "Process isolation startup failed, fell back to thread mode (memory optimization limited)"
+    },
+    "config": {
+      "reload_curves_failed": "Failed to reload curves configuration: {error}",
+      "reloaded": "Configuration files reloaded",
+      "reload_failed": "Failed to reload configuration: {error}",
+      "proxy_size_updated": "Proxy long edge size updated to: {size}",
+      "proxy_size_update_failed": "Failed to update proxy size: {error}"
+    },
+    "errors": {
+      "set_orientation_failed": "Failed to set orientation: {error}\n{traceback}",
+      "rotate_failed": "Rotation operation failed: {error}\n{traceback}",
+      "update_crop_orientation_failed": "Failed to update crop orientation: {error}\n{traceback}"
+    }
+  },
+  "preview_widget": {
+    "buttons": {
+      "rotate_left": "rotate ↶",
+      "rotate_right": "rotate ↷",
+      "fit_window": "Fit Window",
+      "center": "Center",
+      "colorchecker": "ColorChecker Selector",
+      "crop_focus": "Crop Focus",
+      "original": "Original",
+      "contactsheet": "Contactsheet",
+      "add_crop": "+"
+    },
+    "tooltips": {
+      "add_crop": "Add new crop",
+      "select_direction": "Select add direction",
+      "nav_prev": "Previous image",
+      "nav_next": "Next image",
+      "file_combo": "Select file from current folder",
+      "crop_name": "Crop {idx}"
+    },
+    "labels": {
+      "load_image": "Please load an image",
+      "display_error": "Display error: {error}"
+    },
+    "crop_directions": {
+      "down_right": "Prioritize down, then right at edge",
+      "down_left": "Prioritize down, then left at edge",
+      "right_down": "Prioritize right, then down at edge",
+      "right_up": "Prioritize right, then up at edge",
+      "up_left": "Prioritize up, then left at edge",
+      "up_right": "Prioritize up, then right at edge",
+      "left_up": "Prioritize left, then up at edge",
+      "left_down": "Prioritize left, then down at edge"
+    },
+    "dialogs": {
+      "workspace_incompatible_title": "Workspace Incompatible",
+      "workspace_incompatible_message": "Unable to load ColorChecker file: {filename}",
+      "workspace_incompatible_detail": "Please select a different ColorChecker file or switch to the correct workspace."
+    },
+    "status_messages": {
+      "no_crops": "No crop regions",
+      "switch_to_crop": "Switch to {name}",
+      "switch_to_contactsheet": "Switch to contactsheet",
+      "switch_failed": "Switch failed: {error}"
+    }
+  },
   "common": {
     "ok": "OK",
     "cancel": "Cancel",

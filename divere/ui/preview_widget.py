@@ -13,6 +13,7 @@ from PySide6.QtCore import Qt, QTimer, Signal, QPoint, QPointF, QRect, QEvent
 from PySide6.QtGui import QPixmap, QImage, QPainter, QPen, QColor, QKeySequence, QCursor, QPolygonF, QAction
 
 from divere.core.data_types import ImageData, CropInstance, CropAddDirection
+from divere.i18n import tr
 
 
 class CropEditMode(Enum):
@@ -302,22 +303,22 @@ class PreviewWidget(QWidget):
         button_layout = QHBoxLayout()
         
         # 旋转按钮
-        self.rotate_left_btn = QPushButton("← 左旋")
-        self.rotate_right_btn = QPushButton("右旋 →")
+        self.rotate_left_btn = QPushButton(tr("preview_widget.buttons.rotate_left"))
+        self.rotate_right_btn = QPushButton(tr("preview_widget.buttons.rotate_right"))
         self.rotate_left_btn.setMaximumWidth(80)
         self.rotate_right_btn.setMaximumWidth(80)
         self.rotate_left_btn.clicked.connect(self.rotate_left)
         self.rotate_right_btn.clicked.connect(self.rotate_right)
         
         # 视图控制按钮
-        self.fit_window_btn = QPushButton("适应窗口")
-        self.center_btn = QPushButton("居中")
+        self.fit_window_btn = QPushButton(tr("preview_widget.buttons.fit_window"))
+        self.center_btn = QPushButton(tr("preview_widget.buttons.center"))
         self.fit_window_btn.setMaximumWidth(80)
         self.center_btn.setMaximumWidth(80)
         self.fit_window_btn.clicked.connect(self.fit_to_window)
         self.center_btn.clicked.connect(self.center_image)
         # 色卡选择器（默认隐藏，由参数面板联动显示/控制）
-        self.cc_checkbox = QCheckBox("色卡选择器")
+        self.cc_checkbox = QCheckBox(tr("preview_widget.buttons.colorchecker"))
         self.cc_checkbox.toggled.connect(self._on_cc_toggled)
         self.cc_checkbox.setVisible(False)
         # 裁剪按钮组（已移除，使用底部选择条）
@@ -341,7 +342,7 @@ class PreviewWidget(QWidget):
         self.image_label.setObjectName('imageCanvas')
         self.image_label.setAlignment(Qt.AlignmentFlag.AlignCenter)
         self.image_label.setMinimumSize(400, 300)
-        self.image_label.setText("请加载图像")
+        self.image_label.setText(tr("preview_widget.labels.load_image"))
         
         self.scroll_area.setWidget(self.image_label)
         layout.addWidget(self.scroll_area)
@@ -357,7 +358,7 @@ class PreviewWidget(QWidget):
             row.setContentsMargins(8, 4, 8, 4)
             row.setSpacing(8)
             # 左侧：裁剪聚焦开关（默认隐藏）
-            self.btn_focus_toggle = QPushButton("裁剪聚焦")
+            self.btn_focus_toggle = QPushButton(tr("preview_widget.buttons.crop_focus"))
             self.btn_focus_toggle.setCheckable(True)
             self.btn_focus_toggle.setVisible(False)
             self.btn_focus_toggle.setChecked(False)
@@ -368,7 +369,7 @@ class PreviewWidget(QWidget):
             row.addStretch()
             
             # 原图按钮
-            self.btn_contactsheet = QPushButton("原图")
+            self.btn_contactsheet = QPushButton(tr("preview_widget.buttons.original"))
             self.btn_contactsheet.setMaximumWidth(56)
             self.btn_contactsheet.setCheckable(True)
             self.btn_contactsheet.setChecked(True)  # 默认选中原图
@@ -384,27 +385,27 @@ class PreviewWidget(QWidget):
             row.addStretch()
             
             # 新增按钮（固定在最右侧）
-            self.btn_add_crop = QPushButton("+")
+            self.btn_add_crop = QPushButton(tr("preview_widget.buttons.add_crop"))
             self.btn_add_crop.setMaximumWidth(32)
-            self.btn_add_crop.setToolTip("添加新裁剪")
+            self.btn_add_crop.setToolTip(tr("preview_widget.tooltips.add_crop"))
             self.btn_add_crop.clicked.connect(self._on_add_crop_clicked)
             row.addWidget(self.btn_add_crop)
             
             # 方向选择下拉框
             self.combo_direction = QComboBox()
             self.combo_direction.setMaximumWidth(100)
-            self.combo_direction.setToolTip("选择添加方向")
+            self.combo_direction.setToolTip(tr("preview_widget.tooltips.select_direction"))
             
             # 添加8个方向选项
             directions = [
-                ("↓→", CropAddDirection.DOWN_RIGHT, "优先向下，边缘时向右"),
-                ("↓←", CropAddDirection.DOWN_LEFT, "优先向下，边缘时向左"),
-                ("→↓", CropAddDirection.RIGHT_DOWN, "优先向右，边缘时向下"),
-                ("→↑", CropAddDirection.RIGHT_UP, "优先向右，边缘时向上"),
-                ("↑←", CropAddDirection.UP_LEFT, "优先向上，边缘时向左"),
-                ("↑→", CropAddDirection.UP_RIGHT, "优先向上，边缘时向右"),
-                ("←↑", CropAddDirection.LEFT_UP, "优先向左，边缘时向上"),
-                ("←↓", CropAddDirection.LEFT_DOWN, "优先向左，边缘时向下")
+                ("↓→", CropAddDirection.DOWN_RIGHT, tr("preview_widget.crop_directions.down_right")),
+                ("↓←", CropAddDirection.DOWN_LEFT, tr("preview_widget.crop_directions.down_left")),
+                ("→↓", CropAddDirection.RIGHT_DOWN, tr("preview_widget.crop_directions.right_down")),
+                ("→↑", CropAddDirection.RIGHT_UP, tr("preview_widget.crop_directions.right_up")),
+                ("↑←", CropAddDirection.UP_LEFT, tr("preview_widget.crop_directions.up_left")),
+                ("↑→", CropAddDirection.UP_RIGHT, tr("preview_widget.crop_directions.up_right")),
+                ("←↑", CropAddDirection.LEFT_UP, tr("preview_widget.crop_directions.left_up")),
+                ("←↓", CropAddDirection.LEFT_DOWN, tr("preview_widget.crop_directions.left_down"))
             ]
             
             for display_text, direction_value, tooltip in directions:
@@ -449,7 +450,7 @@ class PreviewWidget(QWidget):
             # 文案：原图/接触印相
             has_crops = isinstance(crops, list) and len(crops) > 0
             try:
-                self.btn_contactsheet.setText("接触印相" if has_crops else "原图")
+                self.btn_contactsheet.setText(tr("preview_widget.buttons.contactsheet") if has_crops else tr("preview_widget.buttons.original"))
             except Exception:
                 pass
 
@@ -505,7 +506,7 @@ class PreviewWidget(QWidget):
                     btn.setCheckable(True)
                     cid = getattr(crop, 'id', f'crop_{idx}')
                     btn.setChecked(active_crop_id == cid)
-                    btn.setToolTip(getattr(crop, 'name', f'裁剪 {idx}'))
+                    btn.setToolTip(getattr(crop, 'name', tr("preview_widget.tooltips.crop_name", idx=idx)))
                     btn.clicked.connect(lambda checked, c_id=cid: self._emit_switch_profile('crop', c_id))
                     self._crop_buttons_container.addWidget(btn)
             
@@ -1031,13 +1032,13 @@ class PreviewWidget(QWidget):
         
         # 显示错误对话框
         msg_box = QMessageBox(self)
-        msg_box.setWindowTitle("工作空间不兼容")
+        msg_box.setWindowTitle(tr("preview_widget.dialogs.workspace_incompatible_title"))
         msg_box.setIcon(QMessageBox.Icon.Warning)
-        msg_box.setText(f"无法加载色卡文件: {filename}")
+        msg_box.setText(tr("preview_widget.dialogs.workspace_incompatible_message", filename=filename))
         msg_box.setDetailedText(str(error))
         msg_box.setInformativeText(
             "EnduraDensityExp类型的色卡需要KodakEnduraPremier工作空间。\n"
-            "请选择其他色卡文件或切换到正确的工作空间。"
+            + tr("preview_widget.dialogs.workspace_incompatible_detail")
         )
         msg_box.setStandardButtons(QMessageBox.StandardButton.Ok)
         
@@ -1076,19 +1077,19 @@ class PreviewWidget(QWidget):
         # 上一张按钮
         self.nav_prev_btn = QPushButton("◀")
         self.nav_prev_btn.setMaximumWidth(32)
-        self.nav_prev_btn.setToolTip("上一张图片")
+        self.nav_prev_btn.setToolTip(tr("preview_widget.tooltips.nav_prev"))
         self.nav_prev_btn.setEnabled(False)
-        
+
         # 文件选择下拉框
         self.nav_file_combo = QComboBox()
         self.nav_file_combo.setMinimumWidth(120)
         self.nav_file_combo.setMaximumWidth(200)
-        self.nav_file_combo.setToolTip("选择当前文件夹中的文件")
-        
+        self.nav_file_combo.setToolTip(tr("preview_widget.tooltips.file_combo"))
+
         # 下一张按钮
         self.nav_next_btn = QPushButton("▶")
         self.nav_next_btn.setMaximumWidth(32)
-        self.nav_next_btn.setToolTip("下一张图片")
+        self.nav_next_btn.setToolTip(tr("preview_widget.tooltips.nav_next"))
         self.nav_next_btn.setEnabled(False)
         
         # 添加到导航布局
@@ -1332,7 +1333,7 @@ class PreviewWidget(QWidget):
     def _update_display(self):
         """更新显示"""
         if not self.current_image or self.current_image.array is None:
-            self.image_label.setText("请加载图像")
+            self.image_label.setText(tr("preview_widget.labels.load_image"))
             return
         
         try:
@@ -1348,7 +1349,7 @@ class PreviewWidget(QWidget):
             
         except Exception as e:
             print(f"更新显示失败: {e}")
-            self.image_label.setText(f"显示错误: {str(e)}")
+            self.image_label.setText(tr("preview_widget.labels.display_error", error=str(e)))
     
     def _array_to_pixmap(self, array: np.ndarray) -> QPixmap:
         """将 numpy 数组转换为 QPixmap
