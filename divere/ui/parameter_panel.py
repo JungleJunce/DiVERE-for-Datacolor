@@ -490,19 +490,19 @@ class ParameterPanel(QWidget):
 
             # 纯度标签
             purity_label = QLabel(tr("parameter_panel.labels.purity"))
-            purity_label.setFixedWidth(35)  # 限制宽度
+            purity_label.setFixedWidth(40)  # 限制宽度
             purity_label.setAlignment(Qt.AlignRight | Qt.AlignVCenter)  # 右对齐
             helper_grid.addWidget(purity_label, 1, col * 2)
             self.matrix_helper_widgets.append(purity_label)
 
             # 纯度按钮
             purity_layout = QHBoxLayout()
-            purity_layout.setSpacing(2)
+            purity_layout.setSpacing(1)
             purity_minus = QPushButton(tr("parameter_panel.buttons.purity_decrease"))
-            purity_minus.setFixedWidth(30)
+            purity_minus.setFixedWidth(25)
             purity_minus.setToolTip(tr("parameter_panel.tooltips.purity_decrease", channel=channel_names[col]))
             purity_plus = QPushButton(tr("parameter_panel.buttons.purity_increase"))
-            purity_plus.setFixedWidth(30)
+            purity_plus.setFixedWidth(25)
             purity_plus.setToolTip(tr("parameter_panel.tooltips.purity_increase", channel=channel_names[col]))
             purity_layout.addWidget(purity_minus)
             purity_layout.addWidget(purity_plus)
@@ -518,12 +518,12 @@ class ParameterPanel(QWidget):
 
             # 色相按钮
             hue_layout = QHBoxLayout()
-            hue_layout.setSpacing(2)
+            hue_layout.setSpacing(1)
             hue_left = QPushButton(tr("parameter_panel.buttons.hue_left"))
-            hue_left.setFixedWidth(30)
+            hue_left.setFixedWidth(25)
             hue_left.setToolTip(tr("parameter_panel.tooltips.hue_left", channel=channel_names[col]))
             hue_right = QPushButton(tr("parameter_panel.buttons.hue_right"))
-            hue_right.setFixedWidth(30)
+            hue_right.setFixedWidth(25)
             hue_right.setToolTip(tr("parameter_panel.tooltips.hue_right", channel=channel_names[col]))
             hue_layout.addWidget(hue_left)
             hue_layout.addWidget(hue_right)

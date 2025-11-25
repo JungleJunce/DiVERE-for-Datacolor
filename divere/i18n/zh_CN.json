@@ -72,7 +72,7 @@
   },
   "parameter_panel": {
     "tabs": {
-      "input_color": "输入色彩科学",
+      "input_color": "IDT",
       "density_matrix": "密度与矩阵",
       "rgb_exposure": "RGB曝光",
       "density_curves": "密度曲线",
@@ -169,8 +169,8 @@
     "checkboxes": {
       "spectral_sharpening": "扫描仪光谱锐化（串扰校正）",
       "colorchecker_selector": "色卡选择器",
-      "optimize_idt": "优化IDT变换（光源-传感器串扰）",
-      "optimize_density_matrix": "优化数字Mask（密度计-负片串扰）",
+      "optimize_idt": "优化IDT变换\n（光源-传感器串扰）",
+      "optimize_density_matrix": "优化数字Mask\n（密度计-负片串扰）",
       "aesthetic_adjustment": "美学式调整数字Mask",
       "enable_density_inversion": "启用密度反相",
       "enable_density_matrix": "启用密度矩阵",

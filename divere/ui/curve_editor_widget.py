@@ -24,7 +24,7 @@ class CurveEditWidget(QWidget):
     
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setMinimumSize(400, 460)  # 增加最小高度以容纳正方形绘图区域
+        self.setMinimumSize(400, 550)  # 增加最小高度以容纳正方形绘图区域
         self.setSizePolicy(QSizePolicy.Policy.Expanding, QSizePolicy.Policy.Expanding)
         
         # 曲线控制点 [(x, y), ...]

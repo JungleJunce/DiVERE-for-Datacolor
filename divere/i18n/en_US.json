@@ -43,10 +43,10 @@
       "paste_default": "Paste Default",
       "copy_as_default": "Copy as Default",
       "copy_as_default_tooltip": "Save current parameter settings as default for current folder",
-      "apply_contactsheet_settings": "Apply Contact Sheet Settings",
-      "apply_contactsheet_settings_tooltip": "Copy color grading parameters from contact sheet to current crop",
-      "apply_to_contactsheet": "Apply Current Settings to Contact Sheet",
-      "apply_to_contactsheet_tooltip": "Copy color grading parameters from current crop to contact sheet"
+      "apply_contactsheet_settings": "Apply Contactsheet Settings",
+      "apply_contactsheet_settings_tooltip": "Copy color grading parameters from contactsheet to current crop",
+      "apply_to_contactsheet": "Apply Current Settings to Contactsheet",
+      "apply_to_contactsheet_tooltip": "Copy color grading parameters from current crop to contactsheet"
     },
     "status": {
       "ready": "Ready",
@@ -72,8 +72,8 @@
   },
   "parameter_panel": {
     "tabs": {
-      "input_color": "Input Color Science",
-      "density_matrix": "Density & Matrix",
+      "input_color": "IDT",
+      "density_matrix": "Density and Matrix",
       "rgb_exposure": "RGB Exposure",
       "density_curves": "Density Curves",
       "pipeline_control": "Pipeline Control"
@@ -169,8 +169,8 @@
     "checkboxes": {
       "spectral_sharpening": "Scanner Spectral Sharpening (Crosstalk Correction)",
       "colorchecker_selector": "ColorChecker Selector",
-      "optimize_idt": "Optimize IDT Transform (Light Source-Sensor Crosstalk)",
-      "optimize_density_matrix": "Optimize Digital Mask (Densitometer-Negative Crosstalk)",
+      "optimize_idt": "Optimize IDT Transform \n(Light Source-Sensor Crosstalk)",
+      "optimize_density_matrix": "Optimize Digital Mask \n(Densitometer-Negative Crosstalk)",
       "aesthetic_adjustment": "Aesthetic Digital Mask Adjustment",
       "enable_density_inversion": "Enable Density Inversion",
       "enable_density_matrix": "Enable Density Matrix",
