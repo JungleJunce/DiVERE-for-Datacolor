@@ -1605,8 +1605,9 @@ class FilmMathOps:
             # 密度曲线被禁用时，仍需要将density_array转换回线性空间
             # 这确保了RGB增益等在密度空间的处理结果能正确返回
             result_array = self.density_to_linear(density_array)
-            if params.screen_glare_compensation > 0.0:
-                result_array = np.maximum(0.0, result_array - params.screen_glare_compensation)
+            # 没有密度曲线时，应同时关闭反光校正。
+            # if params.screen_glare_compensation > 0.0:
+            #     result_array = np.maximum(0.0, result_array - params.screen_glare_compensation)
         
         if profile is not None:
             profile['density_curves_ms'] = (time.time() - t4) * 1000.0
