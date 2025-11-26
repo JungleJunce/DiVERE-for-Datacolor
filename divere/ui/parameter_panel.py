@@ -1656,7 +1656,11 @@ class ParameterPanel(QWidget):
         self.parameter_changed.emit()
 
     def _on_ucs_drag_finished(self, coords_uv: dict):
-        """UCS拖动结束：发出无参参数变更，并将 primaries (xy) 以字典形式广播给上层。"""
+        """UCS拖动结束：将 primaries (xy) 以字典形式广播给上层。
+
+        注意：不发射 parameter_changed 信号，因为 UCS primaries 不在 ColorGradingParams 中。
+        custom_primaries_changed 信号会触发色彩空间注册和 preview 更新。
+        """
         try:
             if not isinstance(coords_uv, dict):
                 coords_uv = self.ucs_widget.get_uv_coordinates()
@@ -1667,17 +1671,16 @@ class ParameterPanel(QWidget):
                     u, v = coords_uv[key]
                     x, y = uv_to_xy(u, v)
                     primaries_xy[key] = (float(x), float(y))
-            
+
             # 检查是否修改IDT，并添加星号标记（primaries修改也算IDT修改）
             self._mark_as_modified(self.input_colorspace_combo)
-            
-            # 发出两类信号：UI参数变更 + 基色更新
-            self.parameter_changed.emit()
+
+            # 发出基色更新信号（custom_primaries_changed 会触发色彩空间更新和 preview 刷新）
             if len(primaries_xy) == 3:
                 self.custom_primaries_changed.emit(primaries_xy)
         except Exception:
-            # 即使转换失败，也保持无参的参数变更触发
-            self.parameter_changed.emit()
+            # 转换失败时静默忽略（避免干扰用户体验）
+            pass
 
     def _on_reset_point(self, key: str):
         space = self.input_colorspace_combo.currentText().strip('*')

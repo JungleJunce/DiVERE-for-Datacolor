@@ -2663,6 +2663,11 @@ class MainWindow(QMainWindow):
             gamma = float(self.parameter_panel.idt_gamma_spinbox.value())
             base_name = self.context.get_input_color_space().replace("_custom", "").replace("_preset", "")
             temp_name = f"{base_name}_custom"
+
+            # 检查当前是否已经在这个 custom 色彩空间下
+            current_space = self.context.get_input_color_space()
+            was_already_custom = (current_space == temp_name)
+
             # 注册/覆盖临时空间（gamma=1.0，白点D65）
             self.context.color_space_manager.register_custom_colorspace(
                 name=temp_name,
@@ -2672,6 +2677,12 @@ class MainWindow(QMainWindow):
             )
             # 切换输入色彩变换（Context 内部会重建代理并刷新预览）
             self.context.set_input_color_space(temp_name)
+
+            # 如果已经在 custom 色彩空间下，强制触发 preview 更新
+            # （避免线程模式下的缓存竞态条件问题）
+            if was_already_custom:
+                self.context._trigger_preview_update()
+
             # 不修改其他调色参数，仅切换输入空间
         except Exception as e:
             try:
