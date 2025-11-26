@@ -26,7 +26,7 @@ class _PreviewWorkerSignals(QObject):
 class _PreviewWorker(QRunnable):
     def __init__(self, image: ImageData, params: ColorGradingParams, the_enlarger: TheEnlarger,
                  color_space_manager: ColorSpaceManager, convert_to_monochrome_in_idt: bool = False,
-                 orientation: int = 0):
+                 orientation: int = 0, idt_gamma: float = 1.0, custom_colorspace_def: dict = None):
         super().__init__()
         self.image = image
         self.params = params
@@ -34,6 +34,8 @@ class _PreviewWorker(QRunnable):
         self.color_space_manager = color_space_manager
         self.convert_to_monochrome_in_idt = convert_to_monochrome_in_idt
         self.orientation = orientation
+        self.idt_gamma = idt_gamma
+        self.custom_colorspace_def = custom_colorspace_def
         self.signals = _PreviewWorkerSignals()
 
     @Slot()
@@ -43,12 +45,51 @@ class _PreviewWorker(QRunnable):
         image = self.image
         params = self.params
         orientation = self.orientation
+        idt_gamma = self.idt_gamma
+        custom_colorspace_def = self.custom_colorspace_def
         self.image = None
         self.params = None
+        self.idt_gamma = None
+        self.custom_colorspace_def = None
         print(f"[DEBUG] PreviewWorker.run(): 图像尺寸={image.width}x{image.height}, orientation={orientation}", flush=True)
 
         try:
-            # === Apply rotation if needed ===
+            # === Step A: 应用 IDT Gamma（在旋转之前）===
+            if abs(idt_gamma - 1.0) > 1e-6:
+                print(f"[DEBUG] PreviewWorker.run(): 应用 IDT gamma={idt_gamma}", flush=True)
+                image.array = self.the_enlarger.pipeline_processor.math_ops.apply_power(
+                    image.array, idt_gamma, use_optimization=True
+                )
+
+            # === Step B: 注册自定义色彩空间（如果需要）===
+            if custom_colorspace_def:
+                try:
+                    cs_name = custom_colorspace_def.get('name')
+                    primaries_xy = np.array(custom_colorspace_def.get('primaries_xy'), dtype=float)
+                    white_point_xy = np.array(custom_colorspace_def.get('white_point_xy'), dtype=float)
+                    gamma = float(custom_colorspace_def.get('gamma', 1.0))
+
+                    print(f"[DEBUG] PreviewWorker.run(): 注册自定义色彩空间 {cs_name}", flush=True)
+                    self.color_space_manager.register_custom_colorspace(
+                        name=cs_name,
+                        primaries_xy=primaries_xy,
+                        white_point_xy=white_point_xy,
+                        gamma=gamma
+                    )
+                except Exception as e:
+                    # 注册失败不应导致预览失败，记录错误并继续
+                    print(f"[WARNING] PreviewWorker.run(): 注册自定义色彩空间失败: {e}", flush=True)
+
+            # === Step C: 色彩空间转换 ===
+            print(f"[DEBUG] PreviewWorker.run(): 应用色彩空间转换 {params.input_color_space_name}", flush=True)
+            image = self.color_space_manager.set_image_color_space(
+                image, params.input_color_space_name
+            )
+            image = self.color_space_manager.convert_to_working_space(
+                image, skip_gamma_inverse=True
+            )
+
+            # === Step D: Apply rotation if needed ===
             if orientation % 360 != 0:
                 k = (orientation // 90) % 4
                 if k != 0:
@@ -2880,6 +2921,21 @@ class ApplicationContext(QObject):
             self._preview_busy = False
             return
 
+        # 获取 IDT gamma
+        idt_gamma = self.get_current_idt_gamma()
+        print(f"[DEBUG] _trigger_preview_with_thread(): IDT gamma={idt_gamma}", flush=True)
+
+        # 检测是否需要传递自定义色彩空间定义
+        custom_colorspace_def = None
+        cs_name = self._current_params.input_color_space_name
+        if self.color_space_manager.is_custom_color_space(cs_name):
+            # 获取自定义色彩空间的完整定义（primaries, white_point, gamma）
+            custom_colorspace_def = self.color_space_manager.get_color_space_definition(cs_name)
+            if custom_colorspace_def:
+                # 添加色彩空间名称
+                custom_colorspace_def['name'] = cs_name
+                print(f"[DEBUG] _trigger_preview_with_thread(): 自定义色彩空间={cs_name}", flush=True)
+
         print("[DEBUG] _trigger_preview_with_thread(): 创建PreviewWorker...", flush=True)
         worker = _PreviewWorker(
             image=proxy_view,
@@ -2887,7 +2943,9 @@ class ApplicationContext(QObject):
             the_enlarger=self.the_enlarger,
             color_space_manager=self.color_space_manager,
             convert_to_monochrome_in_idt=self.should_convert_to_monochrome(),
-            orientation=self.get_current_orientation()
+            orientation=self.get_current_orientation(),
+            idt_gamma=idt_gamma,
+            custom_colorspace_def=custom_colorspace_def
         )
         worker.signals.result.connect(self._on_preview_result)
         worker.signals.error.connect(self._on_preview_error)
