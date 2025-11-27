@@ -1120,28 +1120,32 @@ class FilmMathOps:
                                    curve_points: Optional[List[Tuple[float, float]]],
                                    channel_curves: Optional[Dict[str, List[Tuple[float, float]]]],
                                    use_parallel: bool = True) -> np.ndarray:
-        """
-        高精度密度曲线处理（导出专用）- 使用65536点LUT（16位精度）
 
-        优化策略：使用65536点的高精度LUT代替逐像素插值
-        - 65536点 = 16位精度，对于任何导出格式都完全足够
-        - 相比np.interp逐像素插值，性能提升10-50倍
-        - 精度损失几乎为零（16位 vs 浮点数的差异人眼不可见）
-        """
-        # 使用65536点的超大LUT，保持导出精度
-        lut_size = 65536
+        # legacy: 全精度导出
+        return self._apply_curves_pure_interpolation(density_array, curve_points, channel_curves)
 
-        # 判断是否需要并行处理
-        should_parallel = self._should_use_parallel(density_array.size, use_parallel)
-
-        if should_parallel:
-            return self._apply_curves_merged_lut_parallel(
-                density_array, curve_points, channel_curves, lut_size
-            )
-        else:
-            return self._apply_curves_merged_lut(
-                density_array, curve_points, channel_curves, lut_size
-            )
+        # """
+        # 高精度密度曲线处理（导出专用）- 使用65536点LUT（16位精度）
+        #
+        # 优化策略：使用65536点的高精度LUT代替逐像素插值
+        # - 65536点 = 16位精度，对于任何导出格式都完全足够
+        # - 相比np.interp逐像素插值，性能提升10-50倍
+        # - 精度损失几乎为零（16位 vs 浮点数的差异人眼不可见）
+        # """
+        # # 使用65536点的超大LUT，保持导出精度
+        # lut_size = 65536
+        #
+        # # 判断是否需要并行处理
+        # should_parallel = self._should_use_parallel(density_array.size, use_parallel)
+        #
+        # if should_parallel:
+        #     return self._apply_curves_merged_lut_parallel(
+        #         density_array, curve_points, channel_curves, lut_size
+        #     )
+        # else:
+        #     return self._apply_curves_merged_lut(
+        #         density_array, curve_points, channel_curves, lut_size
+        #     )
     
     def _apply_curves_pure_interpolation(self, density_array: np.ndarray,
                                        curve_points: Optional[List[Tuple[float, float]]],
