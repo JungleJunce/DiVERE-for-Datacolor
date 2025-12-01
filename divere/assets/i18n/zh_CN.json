@@ -207,7 +207,8 @@
       "export_input_lut_title": "导出输入设备转换LUT",
       "export_color_lut_title": "导出反相校色LUT",
       "export_curve_lut_title": "导出密度曲线LUT",
-      "lut_file_filter": "LUT文件 (*.cube)"
+      "lut_file_filter": "LUT文件 (*.cube)",
+      "colorchecker_crop_warning": "色卡选择器在裁剪模式下有bug，请在原图/接触印相中使用。若图像模糊，可在管线控制中增加长边像素"
     },
     "console_messages": {
       "rollback_default": "已回滚到默认色卡: original_color_cc24data.json",

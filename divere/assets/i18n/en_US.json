@@ -207,7 +207,8 @@
       "export_input_lut_title": "Export Input Device Transform LUT",
       "export_color_lut_title": "Export Inversion Color Correction LUT",
       "export_curve_lut_title": "Export Density Curve LUT",
-      "lut_file_filter": "LUT Files (*.cube)"
+      "lut_file_filter": "LUT Files (*.cube)",
+      "colorchecker_crop_warning": "ColorChecker selector has bugs in crop mode. Please use it in Original/Contactsheet mode. If the image is blurry, you can increase the long edge pixels in Pipeline Control"
     },
     "console_messages": {
       "rollback_default": "Rolled back to default ColorChecker: original_color_cc24data.json",

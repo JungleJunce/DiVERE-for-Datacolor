@@ -751,11 +751,11 @@ class PreviewWidget(QWidget):
             if not self.cc_corners_norm:
                 self._init_default_colorchecker()
             self._ensure_cc_reference_colors()
-        
+
         # 切换色卡模式时清理悬停状态
         if self.cc_enabled:
             self._clear_crop_hover_state()
-        
+
         # overlay_drawer 始终使用统一的 _draw_overlays
         self._update_display()
 

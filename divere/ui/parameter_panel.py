@@ -1692,6 +1692,14 @@ class ParameterPanel(QWidget):
             self.ucs_widget.set_uv_coordinates({key: (u, v)})
 
     def _on_cc_selector_toggled(self, checked: bool):
+        # 如果勾选checkbox且在裁剪模式下，显示警告
+        if checked and self.context.get_active_crop_id() is not None:
+            QMessageBox.warning(
+                self,
+                tr("parameter_panel.dialogs.warning"),
+                tr("parameter_panel.dialogs.colorchecker_crop_warning")
+            )
+
         self.ccm_optimize_button.setEnabled(checked)
         self.save_colorchecker_colors_button.setEnabled(checked)
         self.toggle_color_checker_requested.emit(checked)
